@@ -12,8 +12,6 @@ IRun is a 2D Game engine that will support Vulkan and Dirtect3D 12. The goal of 
 
 ## Libraries/SDK's I Am Using In This Engine
 
-[IWindow](https://github.com/Immanuel-C/IWindow) - By Me
-
 [ILog](https://github.com/Immanuel-C/ILog) - By Me
 
 [IBin](https://github.com/Immanuel-C/IBin) - By Me
