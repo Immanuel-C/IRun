@@ -62,10 +62,15 @@ namespace IRun {
 			// For swapchain recreation
 			swapChainCreateInfo.oldSwapchain = nullptr;
 
+			m_swapChainImageFormat = surfaceFormat.format;
+			m_swapChainExtent = extent;
 
 			m_swapChain = device.Get().createSwapchainKHR(swapChainCreateInfo, nullptr);
 
 			I_DEBUG_LOG_INFO("Swapchain: %p", (VkSwapchainKHR)m_swapChain);
+
+			m_swapChainImages = device.Get().getSwapchainImagesKHR(m_swapChain);
+
 		}
 
 		vk::SurfaceFormatKHR SwapChain::ChooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
