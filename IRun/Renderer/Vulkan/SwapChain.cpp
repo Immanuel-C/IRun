@@ -71,6 +71,41 @@ namespace IRun {
 
 			m_swapChainImages = device.Get().getSwapchainImagesKHR(m_swapChain);
 
+			CreateImageViews(device);
+
+		}
+
+		// An image view is litteraly a view into the image. It describes how to access the image and which part of the image 
+		// to access
+		void SwapChain::CreateImageViews(Device& device) {
+			m_swapChainImageViews = {};
+			m_swapChainImageViews.resize(m_swapChainImages.size());
+
+			for (int i = 0; i < m_swapChainImageViews.size(); i++) {
+				vk::ImageViewCreateInfo imageViewCreateInfo{};
+				imageViewCreateInfo.image = m_swapChainImages[i];
+				// How the data should be interpreted
+				imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
+				imageViewCreateInfo.format = m_swapChainImageFormat;
+				// the components field allows you to swizzle the colour channels around.
+				// So I could change the A field to actually map to the B field
+				// TEST
+				imageViewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
+				imageViewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
+				imageViewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
+				imageViewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;
+				// The subresourceRange field describes what the image's purpose is and which part of the image should be accessed. 
+				// Our images will be used as color targets without any mipmapping levels or multiple layers.
+				imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+				// Mipmaps
+				imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+				// 3-D stereographic apps
+				imageViewCreateInfo.subresourceRange.levelCount = 1;
+				imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+				imageViewCreateInfo.subresourceRange.layerCount = 1;
+
+				m_swapChainImageViews[i] = device.Get().createImageView(imageViewCreateInfo);
+			}
 		}
 
 		vk::SurfaceFormatKHR SwapChain::ChooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
@@ -127,6 +162,9 @@ namespace IRun {
 
 				return actualExtent;
 			}
+
 		}
 	}
 }
+
+#define max(a,b) (((a) > (b)) ? (a) : (b))
