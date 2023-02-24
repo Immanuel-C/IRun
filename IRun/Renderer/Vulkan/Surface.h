@@ -1,9 +1,10 @@
 #pragma once
 
+#include <vulkan/vulkan.hpp>
 #include "Instance.h"
 #include "Window.h"
+#define GLFW_INCLUDE_VULKAN
 #include <glfw3.h>
-#include <IWindowVK.h>
 
 namespace IRun {
 	namespace Vulkan {
@@ -11,9 +12,11 @@ namespace IRun {
 		public:
 			Surface(Instance& instance, Window& window);
 
-			const vk::SurfaceKHR& Get();
+			vk::SurfaceKHR& Get();
 
 			operator vk::SurfaceKHR() { return m_surface; }
+			operator vk::SurfaceKHR&() { return m_surface; }
+
 		private:
 			vk::SurfaceKHR m_surface;
 		};

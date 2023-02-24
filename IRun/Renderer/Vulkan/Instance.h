@@ -1,6 +1,5 @@
 #pragma once
 
-#include <IWindowVK.h>
 #include <glfw3.h>
 #include <vulkan/vulkan.hpp>
 

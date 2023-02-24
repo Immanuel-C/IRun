@@ -105,34 +105,7 @@ workspace "IRun"
 
             defaultBuildCfg()
 
-    project "IWindow"
-        location "Deps/IWindow"
-        kind "StaticLib"
-        language "C++"
-        cppdialect "C++20"
 
-        files { 
-            "%{prj.location}/**.cpp",
-            "%{prj.location}/**.h",
-        }
-
-        includedirs { 
-            "%{prj.location}",
-            VULKAN_SDK .. "/Include",
-        }
-        
-        libdirs {
-            VULKAN_SDK .. "/Lib"
-        }
-
-        defaultBuildLocation()
-        defaultBuildCfg()
-
-        filter "system:windows"
-            links {"User32", "OpenGL32", "XInput", "vulkan-1"}
-        filter "system:linux"
-            links {"X11", "GLX", "GL", "Xcursor", "vulkan-1"}
-        
     project "ILog"
         location "Deps/ILog"
         kind "StaticLib"
@@ -182,13 +155,18 @@ workspace "IRun"
 
         includedirs { 
             "%{prj.location}", 
-            "Deps/IWindow",
             "Deps/IBin",
             "Deps/ILog",
             "Deps/GLM",
             "Deps/GLFW/include/GLFW",
             VULKAN_SDK .. "/Include",
         }
+
+        libdirs {
+            VULKAN_SDK .. "/Lib"
+        }
+
+        links { "vulkan-1" }
 
         defaultBuildLocation()
         defaultBuildCfg()
@@ -207,7 +185,6 @@ workspace "IRun"
         includedirs { 
             "%{prj.location}",
             "IRun",
-            "Deps/IWindow",
             "Deps/IBin",
             "Deps/ILog",
             "Deps/GLM",
@@ -220,6 +197,6 @@ workspace "IRun"
         defaultBuildCfg()
 
         filter "system:windows"
-            links {"User32", "OpenGL32", "XInput", "IWindow", "ILog", "IBin", "GLFW", "Engine"}
+            links {"User32", "OpenGL32", "XInput", "ILog", "IBin", "GLFW", "Engine"}
         filter "system:linux"
-            links {"X11", "GLX", "GL", "Xcursor", "IWindow", "ILog", "IBin", "GLFW", "Engine"}
+            links {"X11", "GLX", "GL", "Xcursor", "ILog", "IBin", "GLFW", "Engine"}

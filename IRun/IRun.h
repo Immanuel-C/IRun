@@ -5,3 +5,4 @@
 #include "Renderer/Vulkan/PhysicalDevice.h"
 #include "Renderer/Vulkan/Device.h"
 #include "Renderer/Vulkan/Surface.h"
+#include "Renderer/Vulkan/SwapChain.h"

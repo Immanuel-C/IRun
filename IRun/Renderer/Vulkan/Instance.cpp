@@ -13,14 +13,7 @@ namespace IRun {
             vk::InstanceCreateInfo createInfo{};
             createInfo.pApplicationInfo = &appInfo;
 
-            if (window.GetAPI() == WindowAPI::IWindow) {
-                std::vector<const char*> extensions;
-                IWindow::Vk::GetRequiredInstanceExtensions(extensions);
-
-                createInfo.enabledExtensionCount = extensions.size();
-                createInfo.ppEnabledExtensionNames = extensions.data();
-            }
-            else if (window.GetAPI() == WindowAPI::GLFW) {
+            {
                 uint32_t extensionCount = 0;
                 const char** extensions;
 

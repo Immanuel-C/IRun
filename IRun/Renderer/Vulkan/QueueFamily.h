@@ -14,7 +14,7 @@ namespace IRun {
 				return graphicsFamily.has_value() && presentFamily.has_value();
 			}
 
-			static QueueFamilyIndices FindQueueFamilies(vk::PhysicalDevice device, vk::SurfaceKHR surface) {
+			static QueueFamilyIndices FindQueueFamilies(vk::PhysicalDevice& device, vk::SurfaceKHR& surface) {
 				QueueFamilyIndices indices{};
 
 				std::vector<vk::QueueFamilyProperties> queueFamilies = device.getQueueFamilyProperties();

@@ -10,7 +10,7 @@ namespace IRun {
 
 			std::map<uint32_t, VkPhysicalDevice> candidates;
 
-			for (const vk::PhysicalDevice& device : devices) {
+			for (vk::PhysicalDevice& device : devices) {
 				uint32_t score = RateDeviceSuitability(device, surface);
 				candidates.insert(std::make_pair(score, device));
 			}
@@ -26,7 +26,7 @@ namespace IRun {
 			return m_physicalDevice;
 		}
 
-		bool PhysicalDevice::CheckDeviceExtensionSupport(const vk::PhysicalDevice& device) {
+		bool PhysicalDevice::CheckDeviceExtensionSupport(vk::PhysicalDevice& device) {
 			std::array<const char*, 1> requiredExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 			std::vector<vk::ExtensionProperties> availableExtensions = device.enumerateDeviceExtensionProperties();
 
@@ -44,7 +44,7 @@ namespace IRun {
 			return true;
 		}
 
-		uint32_t PhysicalDevice::RateDeviceSuitability(const vk::PhysicalDevice& device, Surface& surface) {
+		uint32_t PhysicalDevice::RateDeviceSuitability(vk::PhysicalDevice& device, Surface& surface) {
 
 			uint32_t score = 0;
 
@@ -53,9 +53,16 @@ namespace IRun {
 			
 			score += device.getProperties().limits.maxImageDimension2D;
 
-			QueueFamilyIndices indices = QueueFamilyIndices::FindQueueFamilies(device, surface);
+			QueueFamilyIndices indices = QueueFamilyIndices::FindQueueFamilies(device, surface.Get());
 
-			if (!indices.IsComplete() || !CheckDeviceExtensionSupport(device)) score = 0;
+
+			if (!indices.IsComplete() || !CheckDeviceExtensionSupport(device)) return 0;
+
+			SwapChainSupportDetails swapchainSupport{};
+			SwapChainSupportDetails::QuerySwapChainSupport(device, surface, swapchainSupport);
+			bool swapChainAdequate = !swapchainSupport.formats.empty() || !swapchainSupport.presentModes.empty();
+
+			if (!swapChainAdequate) return 0;
 
 			return score;
 		}
