@@ -10,6 +10,20 @@ Don't expect the main branch to work out of the box.
 
 IRun is a 2D Game engine that will support Vulkan and Dirtect3D 12. The goal of IRun is to be a very fast multithreaded game engine that is made for your most demanding tasks!
 
+## How To Build IRun
+
+**Make sure to have premake installed and have it in the path as well.**
+
+### Windows
+
+Run build.bat open the .sln and run! It will run the Test application.
+
+### Linux (Not Tested Yet)
+
+**Make sure to have g++ and make installed**
+
+Run Build.sh then run make in the terminal.
+
 ## Libraries/SDK's I Am Using In This Engine
 
 [ILog](https://github.com/Immanuel-C/ILog) - By Me
