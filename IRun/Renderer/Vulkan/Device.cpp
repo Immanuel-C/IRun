@@ -42,6 +42,10 @@ namespace IRun {
 			I_DEBUG_LOG_INFO("Vulkan Present Queue: %p", (VkQueue)m_presentQueue);
 		}
 
+		void Device::Destroy() {
+			m_device.destroy();
+		}
+
 		vk::Device Device::Get() {
 			return m_device;
 		}

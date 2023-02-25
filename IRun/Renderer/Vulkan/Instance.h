@@ -12,7 +12,8 @@ namespace IRun {
 		{
 		public:
 			Instance(Window& window);
-			~Instance();
+
+			void Destroy();
 
 			vk::Instance Get() const;
 

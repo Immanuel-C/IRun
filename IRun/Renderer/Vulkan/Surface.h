@@ -11,6 +11,8 @@ namespace IRun {
 		class Surface {
 		public:
 			Surface(Instance& instance, Window& window);
+			
+			void Destroy(Instance& instance);
 
 			vk::SurfaceKHR& Get();
 

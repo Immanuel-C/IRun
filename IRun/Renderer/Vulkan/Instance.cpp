@@ -78,10 +78,13 @@ namespace IRun {
             VK_CHECK(vk::createInstance(&createInfo, nullptr, &m_instance), "Failed to create vulkan instance!");
 
             I_DEBUG_LOG_INFO("Vulkan Instance: %p", (VkInstance)m_instance);
+
         }
 
-        Instance::~Instance() {
+        void Instance::Destroy() {
+            m_instance.destroy();
         }
+
 
         vk::Instance Instance::Get() const {
             return m_instance;

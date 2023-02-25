@@ -13,4 +13,9 @@ int main() {
 	while (window.IsRunning()) {
 		window.Update();
 	}
+
+	swapChain.Destroy(device);
+	device.Destroy();
+	surface.Destroy(instance);
+	instance.Destroy();
 }

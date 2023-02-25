@@ -9,6 +9,8 @@ namespace IRun {
 		public:
 			Device(PhysicalDevice& physicalDevice, Surface& surface);
 
+			void Destroy();
+
 			vk::Device Get();
 
 			operator vk::Device() {

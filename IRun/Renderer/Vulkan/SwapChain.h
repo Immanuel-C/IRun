@@ -16,6 +16,12 @@ namespace IRun {
 		public:
 			SwapChain(Window& window, Device& device, PhysicalDevice& physicalDevice, Surface& surface, bool vSync);
 
+			vk::SwapchainKHR& Get();
+
+			vk::Format GetSwapChainImageFormat();
+			vk::Extent2D GetSwapChainExtent2D();
+
+			void Destroy(Device& device);
 		private:
 
 			vk::SwapchainKHR m_swapChain;

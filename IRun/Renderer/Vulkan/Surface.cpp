@@ -12,6 +12,12 @@ namespace IRun {
 			I_DEBUG_LOG_INFO("Vulkan Surface: %p", (VkSurfaceKHR)m_surface);
 		}
 
+		void Surface::Destroy(Instance& instance) {
+			instance.Get().destroySurfaceKHR(m_surface);
+		}
+
+
+
 		vk::SurfaceKHR& Surface::Get() {
 			return m_surface;
 		}

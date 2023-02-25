@@ -75,6 +75,16 @@ namespace IRun {
 
 		}
 
+		vk::SwapchainKHR& SwapChain::Get() { return m_swapChain; }
+
+		vk::Format SwapChain::GetSwapChainImageFormat() { return m_swapChainImageFormat; }
+
+		vk::Extent2D SwapChain::GetSwapChainExtent2D() { return m_swapChainExtent; }
+
+		void SwapChain::Destroy(Device& device) {
+			device.Get().destroySwapchainKHR(m_swapChain);
+		}
+
 		// An image view is litteraly a view into the image. It describes how to access the image and which part of the image 
 		// to access
 		void SwapChain::CreateImageViews(Device& device) {
