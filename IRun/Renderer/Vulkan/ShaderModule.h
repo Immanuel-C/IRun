@@ -19,6 +19,7 @@ namespace IRun {
 			vk::ShaderModule& Get();
 		private:
 			vk::ShaderModule m_shaderModule;
+			ShaderType m_shaderType;
 		};
 	}
 }

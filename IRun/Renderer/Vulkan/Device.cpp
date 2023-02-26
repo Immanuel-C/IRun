@@ -37,12 +37,15 @@ namespace IRun {
 			m_device.getQueue(indices.graphicsFamily.value(), 0, &m_graphicsQueue);
 			m_device.getQueue(indices.presentFamily.value(), 0, &m_presentQueue);
 
-			I_DEBUG_LOG_INFO("Vulkan Device: %p", (VkDevice)m_device);
-			I_DEBUG_LOG_INFO("Vulkan Graphics Queue: %p", (VkQueue)m_graphicsQueue);
-			I_DEBUG_LOG_INFO("Vulkan Present Queue: %p", (VkQueue)m_presentQueue);
+			I_DEBUG_LOG_INFO("Device: %p", (VkDevice)m_device);
+			I_DEBUG_LOG_INFO("Graphics Queue: %p", (VkQueue)m_graphicsQueue);
+			I_DEBUG_LOG_INFO("Present Queue: %p", (VkQueue)m_presentQueue);
 		}
 
 		void Device::Destroy() {
+			I_DEBUG_LOG_INFO("Device Deleted: %p", (VkDevice)m_device);
+			I_DEBUG_LOG_INFO("Graphics Queue Deleted: %p", (VkQueue)m_graphicsQueue);
+			I_DEBUG_LOG_INFO("Present Queue Deleted: %p", (VkQueue)m_presentQueue);
 			m_device.destroy();
 		}
 

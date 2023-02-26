@@ -6,3 +6,5 @@
 #include "Renderer/Vulkan/Device.h"
 #include "Renderer/Vulkan/Surface.h"
 #include "Renderer/Vulkan/SwapChain.h"
+#include "Renderer/Vulkan/GraphicsPipeline.h"
+#include "Renderer/Vulkan/Framebuffer.h"

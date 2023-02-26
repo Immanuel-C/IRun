@@ -77,11 +77,12 @@ namespace IRun {
 #endif
             VK_CHECK(vk::createInstance(&createInfo, nullptr, &m_instance), "Failed to create vulkan instance!");
 
-            I_DEBUG_LOG_INFO("Vulkan Instance: %p", (VkInstance)m_instance);
+            I_DEBUG_LOG_INFO("Instance: %p", (VkInstance)m_instance);
 
         }
 
         void Instance::Destroy() {
+            I_DEBUG_LOG_INFO("Instance Destroyed: %p", (VkInstance)m_instance);
             m_instance.destroy();
         }
 

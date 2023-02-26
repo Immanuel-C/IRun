@@ -21,6 +21,8 @@ namespace IRun {
 			vk::Format GetSwapChainImageFormat();
 			vk::Extent2D GetSwapChainExtent2D();
 
+			std::vector<vk::ImageView>& GetSwapChainImageViews();
+
 			void Destroy(Device& device);
 		private:
 

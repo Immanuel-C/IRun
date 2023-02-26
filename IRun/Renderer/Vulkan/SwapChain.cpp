@@ -67,12 +67,11 @@ namespace IRun {
 
 			m_swapChain = device.Get().createSwapchainKHR(swapChainCreateInfo, nullptr);
 
-			I_DEBUG_LOG_INFO("Swapchain: %p", (VkSwapchainKHR)m_swapChain);
+			I_DEBUG_LOG_INFO("SwapChainKHR: %p", (VkSwapchainKHR)m_swapChain);
 
 			m_swapChainImages = device.Get().getSwapchainImagesKHR(m_swapChain);
 
 			CreateImageViews(device);
-
 		}
 
 		vk::SwapchainKHR& SwapChain::Get() { return m_swapChain; }
@@ -81,7 +80,15 @@ namespace IRun {
 
 		vk::Extent2D SwapChain::GetSwapChainExtent2D() { return m_swapChainExtent; }
 
+		std::vector<vk::ImageView>& SwapChain::GetSwapChainImageViews() { return m_swapChainImageViews; }
+
 		void SwapChain::Destroy(Device& device) {
+			for (int i = 0; i < m_swapChainImageViews.size(); i++) {
+				I_DEBUG_LOG_INFO("SwapChainKHR: %p, Image View #%i Deleted: %p", (VkSwapchainKHR)m_swapChain, i, (VkImageView)m_swapChainImageViews[i]);
+				device.Get().destroyImageView(m_swapChainImageViews[i]);
+			}
+
+			I_DEBUG_LOG_INFO("SwapChainKHR Deleted: %p", (VkSwapchainKHR)m_swapChain);
 			device.Get().destroySwapchainKHR(m_swapChain);
 		}
 
@@ -115,6 +122,7 @@ namespace IRun {
 				imageViewCreateInfo.subresourceRange.layerCount = 1;
 
 				m_swapChainImageViews[i] = device.Get().createImageView(imageViewCreateInfo);
+				I_DEBUG_LOG_INFO("SwapChainKHR: %p, Image View #%i: %p", (VkSwapchainKHR)m_swapChain, i, (VkImageView)m_swapChainImageViews[i]);
 			}
 		}
 
