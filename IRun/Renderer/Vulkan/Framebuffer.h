@@ -8,6 +8,7 @@ namespace IRun {
 		class Framebuffer {
 		public:
 			Framebuffer(Device& device, SwapChain& swapChain, GraphicsPipeline& graphicsPipeline);
+			std::vector<vk::Framebuffer>& GetFramebuffers();
 
 			void Destroy(Device& device);
 		private:

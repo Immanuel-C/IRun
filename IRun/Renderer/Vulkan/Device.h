@@ -11,7 +11,9 @@ namespace IRun {
 
 			void Destroy();
 
-			vk::Device Get();
+			vk::Device& Get();
+			vk::Queue& GetGraphicsQueue();
+			vk::Queue& GetPresentQueue();
 
 			operator vk::Device() {
 				return m_device;

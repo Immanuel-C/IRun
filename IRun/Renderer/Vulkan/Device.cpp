@@ -49,9 +49,11 @@ namespace IRun {
 			m_device.destroy();
 		}
 
-		vk::Device Device::Get() {
-			return m_device;
-		}
+		vk::Device& Device::Get() { return m_device; }
+
+		vk::Queue& Device::GetGraphicsQueue() { return m_graphicsQueue; }
+
+		vk::Queue& Device::GetPresentQueue() { return m_presentQueue; }
 
 	}
 }

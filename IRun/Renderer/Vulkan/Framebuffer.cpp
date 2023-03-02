@@ -32,5 +32,9 @@ namespace IRun {
 				device.Get().destroyFramebuffer(m_framebuffers[i]);
 			}
 		}
+
+		std::vector<vk::Framebuffer>& Framebuffer::GetFramebuffers() {
+			return m_framebuffers;
+		}
 	}
 }

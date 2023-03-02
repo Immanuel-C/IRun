@@ -1,10 +1,4 @@
 #pragma once
 
 #include "Window.h"
-#include "Renderer/Vulkan/Instance.h"
-#include "Renderer/Vulkan/PhysicalDevice.h"
-#include "Renderer/Vulkan/Device.h"
-#include "Renderer/Vulkan/Surface.h"
-#include "Renderer/Vulkan/SwapChain.h"
-#include "Renderer/Vulkan/GraphicsPipeline.h"
-#include "Renderer/Vulkan/Framebuffer.h"
+#include "Renderer/Vulkan/Renderer.h"

@@ -97,7 +97,7 @@ namespace IRun {
 			// cull the front of the object or the back
 			rasterizerCreateInfo.cullMode = vk::CullModeFlagBits::eBack;
 			// Tells which way we specified the order of the vertices
-			rasterizerCreateInfo.frontFace = vk::FrontFace::eCounterClockwise;
+			rasterizerCreateInfo.frontFace = vk::FrontFace::eClockwise;
 			// The rasterizer can alter the depth values by adding a constant value or biasing them bast on a fragments slope?
 			// Do not understand this
 			// Used in shadow mapping
@@ -259,6 +259,22 @@ namespace IRun {
 			subpass.colorAttachmentCount = 1;
 			subpass.pColorAttachments = &colourAttachmentRef;
 
+			// Subpasses in a render pass automatically take care of image layout transitions. These transitions are controlled by subpass dependencies, which specify memory and execution dependencies between subpasses. 
+			vk::SubpassDependency subpassDependency{};
+			// The first two fields specify the indices of the dependency and the dependent subpass. The special 
+			// value VK_SUBPASS_EXTERNAL refers to the implicit subpass before or after the render pass depending 
+			// on whether it is specified in srcSubpass or dstSubpass. The index 0 refers to our subpass, 
+			// which is the first and only one. The dstSubpass must always be higher than srcSubpass to 
+			// prevent cycles in the dependency graph (unless one of the subpasses is VK_SUBPASS_EXTERNAL).
+			subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+			subpassDependency.dstSubpass = 0;
+			// The next two fields specify the operations to wait on and the stages in which these operations occur.
+			subpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+			subpassDependency.srcAccessMask = (vk::AccessFlags)0;
+			// The operations that should wait on this are in the color attachment stage and involve the writing of the color attachment. 
+			subpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+			subpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+
 			vk::RenderPassCreateInfo renderPassInfo{};
 			renderPassInfo.attachmentCount = 1;
 			// This is the array/pointer that is referenced in the vk::AttachmentReference('s)
@@ -268,7 +284,7 @@ namespace IRun {
 			renderPassInfo.pSubpasses = &subpass;
 
 			m_renderPass = device.Get().createRenderPass(renderPassInfo);
-			I_DEBUG_LOG_INFO("Render Pass: %p", m_renderPass);
+			I_DEBUG_LOG_INFO("Render Pass: %p", (VkRenderPass)m_renderPass);
 		}
 	}
 }
