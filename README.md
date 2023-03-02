@@ -16,7 +16,7 @@ IRun is a 2D Game engine that will support Vulkan and Dirtect3D 12. The goal of 
 
 ### Windows
 
-Run build.bat open the .sln and run! It will run the Test application.
+Run build.bat open the .sln and run if you have visual studio 2022 if not change the vs2022 flag to the versions of visual studio you have (e.g. vs2019)! It will run the Test application.
 
 ### Linux (Not Tested Yet)
 
