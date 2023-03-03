@@ -6,12 +6,6 @@
 
 
 namespace IRun {
-	enum struct WindowAPI
-	{
-		// IWindow Alpha
-		IWindow,
-		GLFW
-	};
 
 	class Window {
 	public:
@@ -23,6 +17,10 @@ namespace IRun {
 
 		GLFWwindow* GetNativeHandle() const;
 
+
+		bool WasResized();
+		void SetResized(bool resized);
+
 		Window(Window&) = delete;
 		Window(Window&&) = delete;
 	private:
@@ -31,9 +29,11 @@ namespace IRun {
 		const int64_t m_height;
 		std::string m_title;
 
-		WindowAPI m_api;
+		GLFWwindow* m_window;
 
-		GLFWwindow* m_GLFWWindow;
+		static void FramebufferResizeCallback(GLFWwindow* glfwWindow, int width, int height);
+
+		bool m_resized = false;
 	};
 }
 

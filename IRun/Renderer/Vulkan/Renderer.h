@@ -5,8 +5,6 @@
 #include "Surface.h"
 #include "PhysicalDevice.h"
 #include "Device.h"
-#include "SwapChain.h"
-#include "GraphicsPipeline.h"
 #include "Framebuffer.h"
 #include "CommandPool.h"
 #include "CommandBuffer.h"
@@ -22,6 +20,7 @@ namespace IRun {
 
 			void Draw();
 		private:
+			Window& m_window;
 			Instance m_instance;
 			Surface m_surface;
 			PhysicalDevice m_physicalDevice;
@@ -40,6 +39,10 @@ namespace IRun {
 			// 3 frames in flight could cause latency frames.
 			const uint32_t m_MAX_FRAMES_IN_FLIGHT = 2;
 			uint32_t m_currentFrame = 0;
+
+			bool m_vSync = false;
+
+			void RecreateSwapChain(Device& device, Framebuffer& framebuffer, Window& window, PhysicalDevice& physicalDevice, Surface& surface, GraphicsPipeline& graphicsPipeline, bool vSync);
 		};
 	}
 }

@@ -3,7 +3,24 @@
 namespace IRun {
 	namespace Vulkan {
 
+
 		SwapChain::SwapChain(Window& window, Device& device, PhysicalDevice& physicalDevice, Surface& surface, bool vSync) {
+			Create(window, device, physicalDevice, surface, vSync);
+		}
+
+		vk::SwapchainKHR& SwapChain::Get() { return m_swapChain; }
+
+		vk::Format SwapChain::GetSwapChainImageFormat() { return m_swapChainImageFormat; }
+
+		vk::Extent2D SwapChain::GetSwapChainExtent2D() { return m_swapChainExtent; }
+
+		std::vector<vk::ImageView>& SwapChain::GetSwapChainImageViews() { return m_swapChainImageViews; }
+
+		void SwapChain::Create(Window& window, Device& device, PhysicalDevice& physicalDevice, Surface& surface, bool vSync, bool recreate) {
+			if (recreate)
+				m_oldSwapChain = m_swapChain;
+
+
 			SwapChainSupportDetails swapChainSupport{};
 			SwapChainSupportDetails::QuerySwapChainSupport(physicalDevice, surface, swapChainSupport);
 
@@ -60,12 +77,22 @@ namespace IRun {
 			// only turn off if we need the data
 			swapChainCreateInfo.clipped = true;
 			// For swapchain recreation
-			swapChainCreateInfo.oldSwapchain = nullptr;
+			// We can use this to not stop drawing when recreating the swapChain
+			if (recreate)
+				swapChainCreateInfo.oldSwapchain = m_oldSwapChain;
 
 			m_swapChainImageFormat = surfaceFormat.format;
 			m_swapChainExtent = extent;
 
 			m_swapChain = device.Get().createSwapchainKHR(swapChainCreateInfo, nullptr);
+
+			if (recreate) {
+				for (int i = 0; i < m_swapChainImageViews.size(); i++) {
+					I_DEBUG_LOG_INFO("SwapChainKHR: %p, Image View #%i Deleted: %p", (VkSwapchainKHR)m_swapChain, i, (VkImageView)m_swapChainImageViews[i]);
+					device.Get().destroyImageView(m_swapChainImageViews[i]);
+				}
+				device.Get().destroySwapchainKHR(m_oldSwapChain);
+			}
 
 			I_DEBUG_LOG_INFO("SwapChainKHR: %p", (VkSwapchainKHR)m_swapChain);
 
@@ -74,13 +101,7 @@ namespace IRun {
 			CreateImageViews(device);
 		}
 
-		vk::SwapchainKHR& SwapChain::Get() { return m_swapChain; }
-
-		vk::Format SwapChain::GetSwapChainImageFormat() { return m_swapChainImageFormat; }
-
-		vk::Extent2D SwapChain::GetSwapChainExtent2D() { return m_swapChainExtent; }
-
-		std::vector<vk::ImageView>& SwapChain::GetSwapChainImageViews() { return m_swapChainImageViews; }
+		
 
 		void SwapChain::Destroy(Device& device) {
 			for (int i = 0; i < m_swapChainImageViews.size(); i++) {

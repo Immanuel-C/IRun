@@ -11,6 +11,8 @@
 
 namespace IRun {
 	namespace Vulkan {
+
+
 		class SwapChain
 		{
 		public:
@@ -23,10 +25,13 @@ namespace IRun {
 
 			std::vector<vk::ImageView>& GetSwapChainImageViews();
 
+			void Create(Window& window, Device& device, PhysicalDevice& physicalDevice, Surface& surface, bool vSync, bool recreate = false);
+
 			void Destroy(Device& device);
 		private:
 
 			vk::SwapchainKHR m_swapChain;
+			vk::SwapchainKHR m_oldSwapChain;
 
 			std::vector <vk::Image> m_swapChainImages;
 			std::vector <vk::ImageView> m_swapChainImageViews;

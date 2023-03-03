@@ -26,6 +26,7 @@ namespace IRun {
 			}
 		}
 
+
 		void Framebuffer::Destroy(Device& device) {
 			for (int i = 0; i < m_framebuffers.size(); i++) {
 				I_DEBUG_LOG_INFO("Framebuffer #%i Deleted: %p", i, (VkFramebuffer)m_framebuffers[i]);

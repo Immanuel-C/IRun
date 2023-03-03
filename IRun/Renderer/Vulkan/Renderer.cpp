@@ -7,12 +7,14 @@ namespace IRun {
 
 		Renderer::Renderer(Window& window, const std::string& vertFileName, const std::string& fragFileName, bool vSync)
 			: m_instance{ window },
-			  m_surface{ m_instance, window },
-			  m_physicalDevice{ m_instance, m_surface },
-			  m_device{ m_physicalDevice, m_surface },
-			  m_swapChain{ window, m_device, m_physicalDevice, m_surface, vSync },
-			  m_graphicsPipeline{ vertFileName, fragFileName, m_device, m_swapChain },
-			  m_framebuffer{ m_device, m_swapChain, m_graphicsPipeline }
+			m_surface{ m_instance, window },
+			m_physicalDevice{ m_instance, m_surface },
+			m_device{ m_physicalDevice, m_surface },
+			m_swapChain{ window, m_device, m_physicalDevice, m_surface, vSync },
+			m_graphicsPipeline{ vertFileName, fragFileName, m_device, m_swapChain },
+			m_framebuffer{ m_device, m_swapChain, m_graphicsPipeline },
+			m_window{ window },
+			m_vSync{ false }
 
 		{
 			QueueFamilyIndices indices = QueueFamilyIndices::FindQueueFamilies(m_physicalDevice.Get(), m_surface.Get());
@@ -61,11 +63,22 @@ namespace IRun {
 
 		void Renderer::Draw() {
 			m_inFlightFences[m_currentFrame].Wait(m_device);
-			m_inFlightFences[m_currentFrame].Reset(m_device);
 
 			uint32_t imageIndex;
 			// Disable timout with a very long timout
-			VK_CHECK(m_device.Get().acquireNextImageKHR(m_swapChain.Get(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame].Get(), nullptr, &imageIndex), "Failed to get next Vulkan swap chain image index");
+			vk::Result imageAqcuireResult = m_device.Get().acquireNextImageKHR(m_swapChain.Get(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame].Get(), nullptr, &imageIndex);
+
+			// Recreate swapChain if out of date
+			// If the driver does not support vk::Result::eErrorOutOfDateKHR we have to handle it manually
+			if (imageAqcuireResult == vk::Result::eErrorOutOfDateKHR || m_window.WasResized()) {
+				RecreateSwapChain(m_device, m_framebuffer, m_window, m_physicalDevice, m_surface, m_graphicsPipeline, m_vSync);
+				return;
+			}
+			else if (imageAqcuireResult != vk::Result::eSuccess && imageAqcuireResult != vk::Result::eSuboptimalKHR)
+				I_LOG_FATAL_ERROR("Failed to acquire next swapChain image!");
+
+			// Only reset fence if we are submiting work
+			m_inFlightFences[m_currentFrame].Reset(m_device);
 
 			m_graphicsCommandBuffers[m_currentFrame].Reset((vk::CommandBufferResetFlagBits)0);
 
@@ -74,7 +87,6 @@ namespace IRun {
 
 			vk::RenderPassBeginInfo renderPassBeginInfo{};
 			renderPassBeginInfo.renderPass = m_graphicsPipeline.GetRenderPass();
-			// TODO: Change index
 			// Attach framebuffer image to attachments in the render pass
 			renderPassBeginInfo.framebuffer = m_framebuffer.GetFramebuffers()[imageIndex];
 			// The next two parameters define the size of the render area. The render area defines where shader loads and stores will take place. The pixels outside this region will have undefined values. It should match the size of the attachments for best performance.
@@ -140,10 +152,40 @@ namespace IRun {
 			presentInfo.swapchainCount = 1;
 			presentInfo.pImageIndices = &imageIndex;
 
-			vk::resultCheck(m_device.GetPresentQueue().presentKHR(presentInfo), "Failed to present Vulkan image");
+			vk::Result presentResult = m_device.GetPresentQueue().presentKHR(presentInfo);
+
+			// Recreate swapChain if out of date or suboptimal
+			// If the driver does not support vk::Result::eErrorOutOfDateKHR we have to handle it manually
+			if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || m_window.WasResized()) {
+				RecreateSwapChain(m_device, m_framebuffer, m_window, m_physicalDevice, m_surface, m_graphicsPipeline, m_vSync);
+			}
+			else if (presentResult != vk::Result::eSuccess)
+				I_LOG_FATAL_ERROR("Failed to present swap chain image!");
+
 			
 			// Gets the index of the next frame in flight
 			m_currentFrame = (m_currentFrame + 1) % m_MAX_FRAMES_IN_FLIGHT;
+		}
+
+		void Renderer::RecreateSwapChain(Device& device, Framebuffer& framebuffer, Window& window, PhysicalDevice& physicalDevice, Surface& surface, GraphicsPipeline& graphicsPipeline, bool vSync)
+		{
+			// Check if the window is minimized
+			int width = 0, height = 0;
+			glfwGetFramebufferSize(window.GetNativeHandle(), &width, &height);
+			while (width == 0 || height == 0) {
+				// Wait till the next event then check if the window is not minimized
+				glfwGetFramebufferSize(window.GetNativeHandle(), &width, &height);
+				glfwWaitEvents();
+			}
+
+			device.Get().waitIdle();
+
+			// Destroys oldSwapChain
+			m_swapChain.Create(window, device, physicalDevice, surface, vSync, true);
+			framebuffer.Destroy(device);
+			framebuffer = { device, m_swapChain, graphicsPipeline };
+
+			m_window.SetResized(false);
 		}
 
 	}
