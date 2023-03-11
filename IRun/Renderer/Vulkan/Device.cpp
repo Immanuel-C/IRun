@@ -27,9 +27,9 @@ namespace IRun {
 			deviceCreateInfo.ppEnabledExtensionNames = requiredExtensions.data();
 			deviceCreateInfo.enabledExtensionCount = requiredExtensions.size();
 
-			// Might use in the future
-			vk::PhysicalDeviceFeatures deviceFeatures{};
-			deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+			// Enable all available features
+			m_enabledFeatures = physicalDevice.GetPhysicalDeviceFeatures();
+			deviceCreateInfo.pEnabledFeatures = &m_enabledFeatures;
 
 
 			VK_CHECK(physicalDevice.Get().createDevice(&deviceCreateInfo, nullptr, &m_device), "Failed to create Vulkan logical device!");
@@ -48,6 +48,8 @@ namespace IRun {
 			I_DEBUG_LOG_INFO("Present Queue Deleted: %p", (VkQueue)m_presentQueue);
 			m_device.destroy();
 		}
+
+		const vk::PhysicalDeviceFeatures& Device::GetEnabledPhysicalDeviceFeatures() { return m_enabledFeatures; }
 
 		vk::Device& Device::Get() { return m_device; }
 

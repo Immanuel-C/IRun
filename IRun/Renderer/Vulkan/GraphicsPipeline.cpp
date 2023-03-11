@@ -3,7 +3,7 @@
 
 namespace IRun {
 	namespace Vulkan {
-		GraphicsPipeline::GraphicsPipeline(const std::string& vertFileName, const std::string& fragFileName, Device& device, SwapChain& swapChain) {
+		GraphicsPipeline::GraphicsPipeline(const std::string& vertFileName, const std::string& fragFileName, Device& device, SwapChain& swapChain, GraphicsPipelineFeatures features) {
 			ShaderModule vertShaderModule{ vertFileName, ShaderType::Vertex, device };
 			ShaderModule fragShaderModule{ fragFileName, ShaderType::Fragment, device };
 
@@ -24,14 +24,18 @@ namespace IRun {
 				fragShaderStageInfo
 			};
 
+			vk::VertexInputBindingDescription vertexBindingDescription = Vec2::GetBindingDescription();
+			std::array< vk::VertexInputAttributeDescription, 2> vertexAttributeDescription = Vec2::GetAttributeDescriptions();
+
+
 			// For passing in vertex data
 			vk::PipelineVertexInputStateCreateInfo vertexInputInfo{};
 			// Spacing between data and whether the data is per-vertex or per-instance
-			vertexInputInfo.vertexBindingDescriptionCount = 0;
-			vertexInputInfo.pVertexBindingDescriptions = nullptr;
+			vertexInputInfo.vertexBindingDescriptionCount = 1;
+			vertexInputInfo.pVertexBindingDescriptions = &vertexBindingDescription;
 			// Type of attributes passed to the vertex shader, which binding to load them from and at which offset
-			vertexInputInfo.vertexAttributeDescriptionCount = 0;
-			vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+			vertexInputInfo.vertexAttributeDescriptionCount = vertexAttributeDescription.size();
+			vertexInputInfo.pVertexAttributeDescriptions = vertexAttributeDescription.data();
 
 
 
@@ -88,12 +92,18 @@ namespace IRun {
 			// Might be useful to for benchmarking and trying to improve preformence in the fragment shader
 			// If turned off the fragment shader wont run.
 			rasterizerCreateInfo.rasterizerDiscardEnable = false;
-			// FILL, LINE (a.k.a wireframe), POINT (for each vertex)
+			// vk::PolygonMode::eFill,  vk::PolygonMode::eLine (a.k.a wireframe),  vk::PolygonMode::ePoint (for each vertex)
 			// Similer to the input assemblers topology except less options
 			// Feature required for anything other than fill.
-			rasterizerCreateInfo.polygonMode = vk::PolygonMode::eFill;
+			if (device.GetEnabledPhysicalDeviceFeatures().fillModeNonSolid)
+				rasterizerCreateInfo.polygonMode = features.polygonMode;
+			else
+				rasterizerCreateInfo.polygonMode = vk::PolygonMode::eFill;
 			// WideLine feature required for anything other than 1.0f
-			rasterizerCreateInfo.lineWidth = 1.0f;
+			if (device.GetEnabledPhysicalDeviceFeatures().wideLines)
+				rasterizerCreateInfo.lineWidth = features.lineWidth;
+			else
+				rasterizerCreateInfo.lineWidth = 1.0f;
 			// cull the front of the object or the back
 			rasterizerCreateInfo.cullMode = vk::CullModeFlagBits::eBack;
 			// Tells which way we specified the order of the vertices

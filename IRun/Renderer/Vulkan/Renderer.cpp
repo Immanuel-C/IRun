@@ -6,17 +6,22 @@ namespace IRun {
 
 
 		Renderer::Renderer(Window& window, const std::string& vertFileName, const std::string& fragFileName, bool vSync)
-			: m_instance{ window },
-			m_surface{ m_instance, window },
-			m_physicalDevice{ m_instance, m_surface },
-			m_device{ m_physicalDevice, m_surface },
-			m_swapChain{ window, m_device, m_physicalDevice, m_surface, vSync },
-			m_graphicsPipeline{ vertFileName, fragFileName, m_device, m_swapChain },
-			m_framebuffer{ m_device, m_swapChain, m_graphicsPipeline },
-			m_window{ window },
+			: m_window{ window },
 			m_vSync{ false }
 
 		{
+			m_instance = { window };
+			m_surface = { m_instance, window };
+			m_physicalDevice = { m_instance, m_surface };
+			m_device = { m_physicalDevice, m_surface };
+			m_swapChain = { window, m_device, m_physicalDevice, m_surface, vSync };
+			GraphicsPipelineFeatures features{};
+			features.polygonMode = vk::PolygonMode::eLine;
+			features.lineWidth = 5.0f;
+			m_graphicsPipeline = { vertFileName, fragFileName, m_device, m_swapChain, features};
+			m_framebuffer = { m_device, m_swapChain, m_graphicsPipeline };
+
+
 			QueueFamilyIndices indices = QueueFamilyIndices::FindQueueFamilies(m_physicalDevice.Get(), m_surface.Get());
 			// We want to record to a command buffer every frame. So we want to able to reset and rerecord over it.
 			m_graphicsCommandPool = { m_device, indices.graphicsFamily.value(), vk::CommandPoolCreateFlagBits::eResetCommandBuffer };
@@ -39,6 +44,8 @@ namespace IRun {
 				renderFinishedSemaphore = { m_device, (vk::SemaphoreCreateFlagBits)0 };
 			for (Fence& inFlightFences : m_inFlightFences)
 				inFlightFences = { m_device, vk::FenceCreateFlagBits::eSignaled };
+
+			m_vertexBuffer = { m_device, m_physicalDevice, m_vertices };
 
 		}
 
@@ -65,13 +72,16 @@ namespace IRun {
 			m_inFlightFences[m_currentFrame].Wait(m_device);
 
 			uint32_t imageIndex;
-			// Disable timout with a very long timout
+			// Disable timeout with a very long timout
 			vk::Result imageAqcuireResult = m_device.Get().acquireNextImageKHR(m_swapChain.Get(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame].Get(), nullptr, &imageIndex);
 
 			// Recreate swapChain if out of date
 			// If the driver does not support vk::Result::eErrorOutOfDateKHR we have to handle it manually
 			if (imageAqcuireResult == vk::Result::eErrorOutOfDateKHR || m_window.WasResized()) {
-				RecreateSwapChain(m_device, m_framebuffer, m_window, m_physicalDevice, m_surface, m_graphicsPipeline, m_vSync);
+				RecreateSwapChain();
+				// Recreate the semaphore because it gets signaled for some reason event though acquireNextImageKHR fails
+				m_imageAvailableSemaphores[m_currentFrame].Destroy(m_device);
+				m_imageAvailableSemaphores[m_currentFrame] = { m_device, (vk::SemaphoreCreateFlagBits)0 };
 				return;
 			}
 			else if (imageAqcuireResult != vk::Result::eSuccess && imageAqcuireResult != vk::Result::eSuboptimalKHR)
@@ -123,6 +133,11 @@ namespace IRun {
 			scissor.extent = m_swapChain.GetSwapChainExtent2D();
 			m_graphicsCommandBuffers[m_currentFrame].Get().setScissor(0, scissor);
 
+
+			std::array<vk::Buffer, 1> vertexBuffers = { m_vertexBuffer.Get() };
+			std::array<vk::DeviceSize, 1> vertexBufferOffsets = { 0 };
+			m_graphicsCommandBuffers[m_currentFrame].Get().bindVertexBuffers(0, 1, vertexBuffers.data(), vertexBufferOffsets.data());
+
 			m_graphicsCommandBuffers[m_currentFrame].Get().draw(3, 1, 0, 0);
 
 			m_graphicsCommandBuffers[m_currentFrame].Get().endRenderPass();
@@ -157,7 +172,7 @@ namespace IRun {
 			// Recreate swapChain if out of date or suboptimal
 			// If the driver does not support vk::Result::eErrorOutOfDateKHR we have to handle it manually
 			if (presentResult == vk::Result::eErrorOutOfDateKHR || presentResult == vk::Result::eSuboptimalKHR || m_window.WasResized()) {
-				RecreateSwapChain(m_device, m_framebuffer, m_window, m_physicalDevice, m_surface, m_graphicsPipeline, m_vSync);
+				RecreateSwapChain();
 			}
 			else if (presentResult != vk::Result::eSuccess)
 				I_LOG_FATAL_ERROR("Failed to present swap chain image!");
@@ -167,23 +182,24 @@ namespace IRun {
 			m_currentFrame = (m_currentFrame + 1) % m_MAX_FRAMES_IN_FLIGHT;
 		}
 
-		void Renderer::RecreateSwapChain(Device& device, Framebuffer& framebuffer, Window& window, PhysicalDevice& physicalDevice, Surface& surface, GraphicsPipeline& graphicsPipeline, bool vSync)
+		void Renderer::RecreateSwapChain()
 		{
 			// Check if the window is minimized
 			int width = 0, height = 0;
-			glfwGetFramebufferSize(window.GetNativeHandle(), &width, &height);
+			glfwGetFramebufferSize(m_window.GetNativeHandle(), &width, &height);
 			while (width == 0 || height == 0) {
 				// Wait till the next event then check if the window is not minimized
-				glfwGetFramebufferSize(window.GetNativeHandle(), &width, &height);
+				glfwGetFramebufferSize(m_window.GetNativeHandle(), &width, &height);
 				glfwWaitEvents();
 			}
 
-			device.Get().waitIdle();
+			m_device.Get().waitIdle();
 
-			// Destroys oldSwapChain
-			m_swapChain.Create(window, device, physicalDevice, surface, vSync, true);
-			framebuffer.Destroy(device);
-			framebuffer = { device, m_swapChain, graphicsPipeline };
+			// Implement oldSwapChain later
+			m_swapChain.Destroy(m_device);
+			m_swapChain.Create(m_window, m_device, m_physicalDevice, m_surface, m_vSync, false);
+			m_framebuffer.Destroy(m_device);
+			m_framebuffer = { m_device, m_swapChain, m_graphicsPipeline };
 
 			m_window.SetResized(false);
 		}

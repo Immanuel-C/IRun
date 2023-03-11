@@ -44,9 +44,11 @@ namespace IRun {
             if (supportedExtensionCount != createInfo.enabledExtensionCount) 
                 I_ASSERT_FATAL_ERROR(true, "Instance extensions not supported!");
 
-#ifdef _DEBUG
-            const std::vector<const char*> validationLayers = {
-                "VK_LAYER_KHRONOS_validation"
+#ifdef DEBUG
+            const std::vector<const char*> layers = {
+                "VK_LAYER_KHRONOS_validation",
+                // Shows fps
+                "VK_LAYER_LUNARG_monitor"
             };
 
             uint32_t layerCount = 0;
@@ -57,23 +59,25 @@ namespace IRun {
 
             uint32_t supportedLayerCount = 0;
             for (const vk::LayerProperties& layer : availableLayers) {
-                for (const char* layerName : validationLayers) {
+                for (const char* layerName : layers) {
                     if (strcmp(layer.layerName, layerName) == 0) {
                         supportedLayerCount++;
                     }
 
-                    if (supportedLayerCount == validationLayers.size()) break;
+                    if (supportedLayerCount == layers.size()) break;
                 }
             }
 
-            if (supportedLayerCount == validationLayers.size()) {
-                createInfo.enabledLayerCount = validationLayers.size();
-                createInfo.ppEnabledLayerNames = validationLayers.data();
+            if (supportedLayerCount == layers.size()) {
+                createInfo.enabledLayerCount = layers.size();
+                createInfo.ppEnabledLayerNames = layers.data();
             }
             else {
                 I_LOG_ERROR("Validation layers not supported! App will run with no validation layers.");
             }
-
+#else
+            createInfo.enabledLayerCount = 0;
+            createInfo.ppEnabledLayerNames = nullptr;
 #endif
             VK_CHECK(vk::createInstance(&createInfo, nullptr, &m_instance), "Failed to create vulkan instance!");
 

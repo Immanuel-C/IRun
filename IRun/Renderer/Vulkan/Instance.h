@@ -11,6 +11,7 @@ namespace IRun {
 		class Instance
 		{
 		public:
+			Instance() = default;
 			Instance(Window& window);
 
 			void Destroy();

@@ -16,6 +16,7 @@ namespace IRun {
 		class SwapChain
 		{
 		public:
+			SwapChain() = default;
 			SwapChain(Window& window, Device& device, PhysicalDevice& physicalDevice, Surface& surface, bool vSync);
 
 			vk::SwapchainKHR& Get();

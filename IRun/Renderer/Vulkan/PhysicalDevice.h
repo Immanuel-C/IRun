@@ -12,9 +12,11 @@ namespace IRun {
 	namespace Vulkan {
 		class PhysicalDevice {
 		public:
+			PhysicalDevice() = default;
 			PhysicalDevice(const Instance& instance, Surface& surface);
 
 			vk::PhysicalDevice& Get();
+			const vk::PhysicalDeviceFeatures& GetPhysicalDeviceFeatures();
 
 			operator vk::PhysicalDevice() { return m_physicalDevice; }
 			operator vk::PhysicalDevice& () { return m_physicalDevice; }
@@ -22,6 +24,8 @@ namespace IRun {
 		private:
 			bool CheckDeviceExtensionSupport(vk::PhysicalDevice& device);
 			uint32_t RateDeviceSuitability(vk::PhysicalDevice& device, Surface& surface);
+
+			vk::PhysicalDeviceFeatures m_features;
 
 			vk::PhysicalDevice m_physicalDevice;
 		};

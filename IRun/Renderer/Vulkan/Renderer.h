@@ -9,6 +9,7 @@
 #include "CommandPool.h"
 #include "CommandBuffer.h"
 #include "SyncObjects.h"
+#include "VertexBuffer.h"
 
 namespace IRun {
 	namespace Vulkan {
@@ -42,7 +43,15 @@ namespace IRun {
 
 			bool m_vSync = false;
 
-			void RecreateSwapChain(Device& device, Framebuffer& framebuffer, Window& window, PhysicalDevice& physicalDevice, Surface& surface, GraphicsPipeline& graphicsPipeline, bool vSync);
+			const std::array<Vec2, 3> m_vertices = {
+				Vec2{glm::vec2{0.0f, -0.5f}, glm::vec3{1.0f, 0.0f, 0.0f}},
+				Vec2{glm::vec2{0.5f,  0.5f}, glm::vec3{0.0f, 1.0f, 0.0f}},
+				Vec2{glm::vec2{-0.5f, 0.5f}, glm::vec3{0.0f, 0.0f, 1.0f}}
+			};
+
+			VertexBuffer m_vertexBuffer;
+
+			void RecreateSwapChain();
 		};
 	}
 }

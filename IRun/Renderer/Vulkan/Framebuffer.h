@@ -7,6 +7,7 @@ namespace IRun {
 	namespace Vulkan {
 		class Framebuffer {
 		public:
+			Framebuffer() = default;
 			Framebuffer(Device& device, SwapChain& swapChain, GraphicsPipeline& graphicsPipeline);
 			std::vector<vk::Framebuffer>& GetFramebuffers();
 

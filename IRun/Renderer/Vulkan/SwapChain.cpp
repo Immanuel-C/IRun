@@ -91,6 +91,7 @@ namespace IRun {
 					I_DEBUG_LOG_INFO("SwapChainKHR: %p, Image View #%i Deleted: %p", (VkSwapchainKHR)m_swapChain, i, (VkImageView)m_swapChainImageViews[i]);
 					device.Get().destroyImageView(m_swapChainImageViews[i]);
 				}
+				device.Get().waitIdle();
 				device.Get().destroySwapchainKHR(m_oldSwapChain);
 			}
 
@@ -159,23 +160,25 @@ namespace IRun {
 
 		vk::PresentModeKHR SwapChain::ChooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes, bool vSync) {
 
-			bool mailboxAvailable = false;
+			if (vSync) return vk::PresentModeKHR::eFifo;
+
+			std::map<vk::PresentModeKHR, bool> presentModeAvailable;
+			presentModeAvailable.insert(std::make_pair(vk::PresentModeKHR::eImmediate, false));
+			presentModeAvailable.insert(std::make_pair(vk::PresentModeKHR::eMailbox, false));
+
 			for (const vk::PresentModeKHR& presentMode : availablePresentModes) {
 				// Tearing but has the least amount of latency
-				if (!vSync && presentMode == vk::PresentModeKHR::eImmediate) return vk::PresentModeKHR::eImmediate;
-				// Fastest V-Sync mode in terms of latency
-				if (presentMode == vk::PresentModeKHR::eMailbox) { 
-					mailboxAvailable = true;
-					if (vSync) return vk::PresentModeKHR::eMailbox;    
-				}
+				if (presentMode == vk::PresentModeKHR::eImmediate) presentModeAvailable.find(presentMode)->second = true;
+				// Fastest present mode in terms of latency and no tearing
+				else if (presentMode == vk::PresentModeKHR::eMailbox) presentModeAvailable.find(presentMode)->second = true;
 			}
 
-			// If immediate mode is not available and V-Sync is off it will automatically go to fifo
-			// but mailbox might still be available so we check again
-			if (mailboxAvailable) return vk::PresentModeKHR::eMailbox;
+			if (!vSync) {
+				if (presentModeAvailable.find(vk::PresentModeKHR::eMailbox)->second == true) return vk::PresentModeKHR::eMailbox;
+				else if (presentModeAvailable.find(vk::PresentModeKHR::eImmediate)->second == true) return vk::PresentModeKHR::eImmediate;
+			}
 
-
-			// Only vk::PresentModeKHR::eFifo is guaranteed to be available
+			// Only present mode that is required to be available
 			return vk::PresentModeKHR::eFifo;
 		}
 
@@ -205,5 +208,3 @@ namespace IRun {
 		}
 	}
 }
-
-#define max(a,b) (((a) > (b)) ? (a) : (b))

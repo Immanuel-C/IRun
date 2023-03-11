@@ -10,6 +10,7 @@ namespace IRun {
 	namespace Vulkan {
 		class Surface {
 		public:
+			Surface() = default;
 			Surface(Instance& instance, Window& window);
 			
 			void Destroy(Instance& instance);

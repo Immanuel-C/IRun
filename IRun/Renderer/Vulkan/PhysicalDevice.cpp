@@ -19,12 +19,16 @@ namespace IRun {
 			I_ASSERT_FATAL_ERROR(candidates.rbegin()->first == 0, "No suitable graphics cards!");
 			m_physicalDevice = candidates.rbegin()->second;
 
+			m_features = m_physicalDevice.getFeatures();
+
 			I_DEBUG_LOG_INFO("Physical Device: %p", (VkPhysicalDevice)m_physicalDevice);
 		}
 
 		vk::PhysicalDevice& PhysicalDevice::Get() {
 			return m_physicalDevice;
 		}
+
+		const vk::PhysicalDeviceFeatures& PhysicalDevice::GetPhysicalDeviceFeatures() { return m_features; }
 
 		bool PhysicalDevice::CheckDeviceExtensionSupport(vk::PhysicalDevice& device) {
 			std::array<const char*, 1> requiredExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME};

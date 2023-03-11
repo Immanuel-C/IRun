@@ -16,7 +16,8 @@ namespace IRun {
 
 			// tellg() = size of file
 			size_t fileSize = file.tellg();
-			std::vector<char> buffer(fileSize);
+			std::vector<char> buffer{};
+			buffer.resize(fileSize);
 			// Go the the start of the file
 			file.seekg(0);
 			file.read(buffer.data(), fileSize);
