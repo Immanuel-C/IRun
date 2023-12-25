@@ -1,0 +1,9 @@
+[submodule "deps/IWindow"]
+	path = deps/IWindow
+	url = https://github.com/Immanuel-C/IWindow.git
+[submodule "deps/ILog"]
+	path = deps/ILog
+	url = https://github.com/Immanuel-C/ILog.git
+[submodule "deps/imgui"]
+	path = deps/imgui
+	url = https://github.com/ocornut/imgui.git
