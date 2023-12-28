@@ -2,6 +2,7 @@
 
 #include "tools\dxc\HLSLCompiler.h"
 
+
 namespace IRun {
 	namespace GL {
 		ShaderProgram::ShaderProgram(const std::string& vertexShaderFilename, const std::string& fragmentShaderFilename) {

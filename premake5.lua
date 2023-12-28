@@ -63,7 +63,8 @@ workspace "IRun"
             "%{prj.location}/../deps/ILog/", 
             "%{prj.location}/../deps/IWindow/src",
             "%{prj.location}/../deps/imgui/",
-            vulkanSdk .. "/Include"
+            vulkanSdk .. "/Include",
+            "%{prj.location}/../deps/glm"
         }
 
         files {"%{prj.location}/**.cpp", "%{prj.location}/**.h",}
