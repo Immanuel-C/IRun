@@ -41,8 +41,9 @@ namespace IRun {
 			CreateDebugMessenger();
 		}
 
-		void Instance::Destroy()
-		{
+		void Instance::Destroy() {
+			I_DEBUG_LOG_TRACE("Destroyed Vulkan instance: 0x%p", m_instance);
+			I_DEBUG_LOG_TRACE("Destroyed Vulkan debug utils messenger: 0x%p", m_debugMessenger);
 			DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger);
 			vkDestroyInstance(m_instance, nullptr);
 		}
@@ -52,7 +53,6 @@ namespace IRun {
 				I_DEBUG_LOG_ERROR("Validation layers are not supported! Program will continue with no validation.");
 				m_enableValidationLayers = false;
 			}
-
 
 			VkApplicationInfo appInfo{};
 			appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -102,7 +102,7 @@ namespace IRun {
 
 			VK_CHECK(vkCreateInstance(&createInfo, nullptr, &m_instance), "Failed to create instance!");
 
-			I_DEBUG_LOG_TRACE("Created Vulkan Instance: 0x%p", m_instance);
+			I_DEBUG_LOG_TRACE("Created Vulkan instance: 0x%p", m_instance);
 		}
 
 		void Instance::CreateDebugMessenger() {
@@ -114,7 +114,7 @@ namespace IRun {
 			createInfo.pUserData = nullptr;
 
 			VK_CHECK(CreateDebugUtilsMessengerEXT(m_instance, &createInfo, &m_debugMessenger), "Failed to create debug messenger!");
-			I_DEBUG_LOG_TRACE("Created Vulkan Debug Utils Messenger: 0x%p", m_debugMessenger);
+			I_DEBUG_LOG_TRACE("Created Vulkan debug utils messenger: 0x%p", m_debugMessenger);
 		}
 
 		bool Instance::CheckValidationLayerSupport()

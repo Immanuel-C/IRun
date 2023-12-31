@@ -5,16 +5,20 @@
 #include <ILog.h>
 #include <vulkan\vulkan.h>
 
-#include "tools\VkCheck.h"
+#include "Check.h"
 
 namespace IRun {
 	namespace VK {
 		class Instance {
 		public:
 			Instance() = default;
+			/// <summary>
+			/// Create connection between Vulkan and IRun. Should be destroyed at the end of our program.
+			/// </summary>
+			/// <param name="window"></param>
 			Instance(IWindow::Window& window);
 			/// <summary>
-			/// Destroy's VkInstance and VkDebugUtilsMessenger (if in debug).
+			/// Destroy's VkInstance and VkDebugUtilsMessenger (if in debug mode).
 			/// </summary>
 			void Destroy();
 			/// <summary>
@@ -22,14 +26,16 @@ namespace IRun {
 			/// </summary>
 			/// <returns>native Vulkan instance.</returns>
 			inline VkInstance Get() const { return m_instance; }
+			// Delete copy constructor because VkInstance and VkDebugUtilsMessengerEXT could be deleted by another copy.
+			Instance(const Instance&) = delete;
+			// Delete operator=(const Instance&) because VkInstance and VkDebugUtilsMessengerEXT could be deleted by another copy.
+			Instance& operator=(const Instance&) = delete;
 		private:
 			VkInstance m_instance;
 			VkDebugUtilsMessengerEXT m_debugMessenger;
 
 			void CreateInstance(IWindow::Window& window);
 			void CreateDebugMessenger();
-
-
 
 			const std::vector<const char*> m_validationLayers = {
 				"VK_LAYER_KHRONOS_validation"
