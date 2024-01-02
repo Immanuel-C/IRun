@@ -1,7 +1,13 @@
 # IRun
- A 2D OpenGL and Vulkan game engine
+ A 2D game engine. More info coming soon.
 
 ## Dependencies
+
+- Glad 
+- IWindow
+- ILog 
+- ImGui 
+- glm
 
 ## Todo:
 
