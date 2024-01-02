@@ -70,7 +70,7 @@ workspace "IRun"
         files {"%{prj.location}/**.cpp", "%{prj.location}/**.h",}
         
         libdirs { vulkanSdk .. "/Lib" }
-        links {"OpenGL32", "Vulkan-1", "IWindow", "ILog", "ImGui", "Glad", "Dxcompiler"}
+        links {"OpenGL32", "Vulkan-1", "IWindow", "ILog", "ImGui", "Glad", "Dxcompiler", "glslang", "HLSL", "OSDependent", "OGLCompiler", "SPIRV"}
 
         defaultBuildLocation()
         defaultBuildCfg()

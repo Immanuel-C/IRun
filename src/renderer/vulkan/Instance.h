@@ -8,7 +8,7 @@
 #include "Check.h"
 
 namespace IRun {
-	namespace VK {
+	namespace Vk {
 		class Instance {
 		public:
 			Instance() = default;

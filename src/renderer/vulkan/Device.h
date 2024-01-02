@@ -8,11 +8,14 @@
 #include <set>
 
 #include "Instance.h"
+#include "Surface.h"
 #include "QueueFamilyIndices.h"
+#include "SwapchainDetails.h"
 #include "Check.h"
+#include "PNext.h"
 
 namespace IRun {
-	namespace VK {
+	namespace Vk {
 		enum struct QueueType {
 			Graphics,
 			Compute,
@@ -28,7 +31,7 @@ namespace IRun {
 			/// Obtain the best physical device (APU, GPU, TPU, etc.) for our program, then create an interface between our physical device and IRun. Must be destroyed before the instance.
 			/// </summary>
 			/// <param name="instance"></param>
-			Device(const Instance& instance);
+			Device(const Instance& instance, const Surface& surface);
 			/// <summary>
 			/// Destroy the device.
 			/// </summary>
@@ -48,25 +51,37 @@ namespace IRun {
 			/// </summary>
 			/// <returns>location of the Vulkan queue families</returns>
 			const inline QueueFamilyIndices& GetQueueFamilies() const { return m_indices; }
+			/// <summary>
+			/// Get the swapchain details.
+			/// </summary>
+			/// <returns>swapchain details</returns>
+			const inline SwapchainDetails& GetSwapchainDetails() const { return m_swapchainDetails; }
 			// Delete copy constructor because VkDevice could be deleted by another copy.
 			Device(const Device&) = delete;
 			// Delete copy constructor because VkDevice could be deleted by another copy.
 			const Device& operator=(const Device&) = delete;
 		private:
-			VkPhysicalDevice m_physicalDevice;
+			VkPhysicalDevice m_physicalDevice = nullptr;
 			VkDevice m_device;
 
 			std::unordered_map<QueueType, VkQueue> m_queues;
 
-			QueueFamilyIndices m_indices;
+			std::array<const char*, 1> m_deviceExtensions = {
+				VK_KHR_SWAPCHAIN_EXTENSION_NAME
+			};
 
-			void GetPhysicalDevice(const Instance& instance);
+			QueueFamilyIndices m_indices;
+			SwapchainDetails m_swapchainDetails;
+
+			void GetPhysicalDevice(const Instance& instance, const Surface& surface);
 			void CreateDevice(const Instance& instance);
 
-			QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+			QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, const Surface& surface);
+			SwapchainDetails FindSwapchainDetails(VkPhysicalDevice device, const Surface& surface);
 
 
-			bool CheckDeviceSuitable(VkPhysicalDevice device);
+			bool CheckDeviceSuitable(VkPhysicalDevice device, const Surface& surface);
+			bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 		};
 	}
 }

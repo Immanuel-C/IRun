@@ -32,6 +32,7 @@ namespace IRun {
 					exit(EXIT_FAILURE);
 				}
 
+
 				std::string vertShaderSource = ReadFile(vertShaderFilename);
 				std::string fragShaderSource = ReadFile(fragmentShaderFilename);
 
@@ -82,7 +83,9 @@ namespace IRun {
 						I_LOG_FATAL_ERROR("Failed to compile vertex shader:\n\n%s\n\nAbort!", errorBuf->GetBufferPointer());
 						exit(EXIT_FAILURE);
 					}
+				
 				}
+
 
 				DxcBuffer fragBuf{};
 				fragBuf.Encoding = DXC_CP_ACP;
@@ -115,7 +118,6 @@ namespace IRun {
 				vertBinSource->GetResult(&vertCode);
 				CComPtr<IDxcBlob> fragCode;
 				fragBinSource->GetResult(&fragCode);
-
 				vertBinSource.Release();
 				fragBinSource.Release();
 				utils.Release();

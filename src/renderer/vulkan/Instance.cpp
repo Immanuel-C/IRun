@@ -35,7 +35,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 }
 
 namespace IRun {
-	namespace VK {
+	namespace Vk {
 		Instance::Instance(IWindow::Window& window) {
 			CreateInstance(window);
 			CreateDebugMessenger();
@@ -70,6 +70,7 @@ namespace IRun {
 			IWindow::Vk::GetRequiredInstanceExtensions(requiredInstanceExtensions);
 			if (m_enableValidationLayers)
 				requiredInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+			requiredInstanceExtensions.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
 
 			uint32_t extensionCount = 0;
 			vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);

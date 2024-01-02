@@ -20,7 +20,7 @@ namespace IRun {
 			// glShaderSource(vertexShader, 1, &vertexShaderSourceCStr, nullptr);
 			// glCompileShader(vertexShader);
 
-			glShaderBinary(1, &vertexShader, GL_SHADER_BINARY_FORMAT_SPIR_V, shaderBin[0]->GetBufferPointer(), shaderBin[0]->GetBufferSize());
+			glShaderBinary(1, &vertexShader, GL_SHADER_BINARY_FORMAT_SPIR_V, shaderBin[0]->GetBufferPointer(), (int)shaderBin[0]->GetBufferSize());
 			glSpecializeShader(vertexShader, "main", 0, 0, 0);
 
 			glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
@@ -36,7 +36,7 @@ namespace IRun {
 			// glShaderSource(fragmentShader, 1, &fragmentShaderSourceCStr, nullptr);
 			// glCompileShader(fragmentShader);
 
-			glShaderBinary(1, &fragmentShader, GL_SHADER_BINARY_FORMAT_SPIR_V, shaderBin[1]->GetBufferPointer(), shaderBin[1]->GetBufferSize());
+			glShaderBinary(1, &fragmentShader, GL_SHADER_BINARY_FORMAT_SPIR_V, shaderBin[1]->GetBufferPointer(), (int)shaderBin[1]->GetBufferSize());
 			glSpecializeShader(fragmentShader, "main", 0, 0, 0);
 
 			glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
@@ -59,6 +59,7 @@ namespace IRun {
 
 			glDeleteShader(vertexShader);
 			glDeleteShader(fragmentShader);
+
 			shaderBin[0].Release();
 			shaderBin[1].Release();
 		}
