@@ -2,24 +2,23 @@
 #include <IWindow.h>
 #include <IWindowGL.h>
 
-#include <backends\imgui_impl_opengl3.h>
+#include <backends/imgui_impl_opengl3.h>
 #include <IWindowImGUIBackend.h>
 
 #include <renderer/vulkan/Instance.h>
 #include <renderer/vulkan/Surface.h>
 #include <renderer/vulkan/Device.h>
 #include <renderer/vulkan/Swapchain.h>
+#include <renderer/vulkan/GraphicsPipeline.h>
 
-#include <renderer\opengl\VertexBufferObject.h>
-#include <renderer\opengl\VertexArrayObject.h>
-#include <renderer\opengl\IndexBufferObject.h>
-#include <renderer\opengl\ShaderProgram.h>
+#include <renderer/opengl/VertexBufferObject.h>
+#include <renderer/opengl/VertexArrayObject.h>
+#include <renderer/opengl/IndexBufferObject.h>
+#include <renderer/opengl/ShaderProgram.h>
 
 int TestGL() {
     IWindow::Window window{};
     IWindow::GL::Context glcontext{};
-
-
 
     if (!window.Create(800, 600, "Hello IRun!")) return EXIT_FAILURE;
 
@@ -121,6 +120,7 @@ int TestVK() {
     IRun::Vk::Surface surface{ window, instance };
     IRun::Vk::Device device{ instance, surface };
     IRun::Vk::Swapchain swapchain{ false, window, surface, device };
+    IRun::Vk::GraphicsPipeline graphicsPipeline{ "shaders/vulkanVert.hlsl", "shaders/vulkanfrag.hlsl", device, swapchain };
 
     while (window.IsRunning()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
@@ -128,6 +128,7 @@ int TestVK() {
         window.Update();
     }
 
+    graphicsPipeline.Destroy(device);
     swapchain.Destroy(device);
     device.Destroy();
     surface.Destroy(instance);
@@ -137,5 +138,5 @@ int TestVK() {
 }
 
 int main() {
-    return TestGL();
+    return TestVK();
 }

@@ -79,6 +79,7 @@ namespace IRun {
 
 		void Device::CreateDevice(const Instance& instance) {
 
+			// Probably a bad way to sort queue families and create queues but it works.
 			std::vector<std::pair<QueueType, int>> queueFamiliesSorted{
 				{ QueueType::Graphics, m_indices.graphicsFamily },
 				{ QueueType::Presentation, m_indices.presentationFamily },

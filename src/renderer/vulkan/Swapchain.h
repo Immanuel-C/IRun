@@ -26,7 +26,15 @@ namespace IRun {
 			/// </summary>
 			/// <returns>native swapchain handle.</returns>
 			inline VkSwapchainKHR Get() const { return m_swapchain; }
-
+			/// <summary>
+			/// Get the chosen swapchain details.
+			/// </summary>
+			/// <returns>pair of VkExtent2D and VKSurfaceFormatKHR</returns>
+			const inline std::pair<VkExtent2D, VkSurfaceFormatKHR>& GetChosenSwapchainDetails() const { return { m_imageExtent, m_surfaceFormat }; }
+			// Delete copy constructor because VkSwapchainKHR could be deleted by another copy.
+			Swapchain(const Swapchain&) = delete;
+			// Delete copy constructor because VkSwapchainKHR could be deleted by another copy.
+			Swapchain& operator=(const Swapchain&) = delete;
 		private:
 			VkSwapchainKHR m_swapchain;
 
