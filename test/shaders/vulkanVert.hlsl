@@ -1,11 +1,17 @@
-float3 positions[3] =
+
+struct VSInput
 {
-	   float3( 0.0f, -0.5f, 0.0f ),
-	   float3( 0.5f,  0.5f, 0.0f ),
-	   float3(-0.5f,  0.5f, 0.0f )
+    float3 position : POSITION0;
 };
 
-void main(float4 position : SV_POSITION, uint VertexIndex : SV_VertexID)
+struct VSOutput
 {
-    position = float4(positions[VertexIndex], 1.0f);
+    float4 position : SV_POSITION;
+};
+
+VSOutput main(VSInput input) 
+{
+    VSOutput output = (VSOutput) 0;
+    output.position = float4(input.position, 1.0f);
+    return output;
 }

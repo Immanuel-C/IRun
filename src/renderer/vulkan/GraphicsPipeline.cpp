@@ -7,6 +7,9 @@ namespace IRun {
 
 			std::array<CComPtr<IDxcBlob>, 2> shaderBin = Tools::DXC::CompileHLSLtoSPRIV(vertShaderFilename, fragShaderFilename);
 
+			// std::string vertCode = IRun::Tools::ReadFile(vertShaderFilename, std::ios::binary);
+			// std::string fragCode = IRun::Tools::ReadFile(fragShaderFilename, std::ios::binary);
+
 			VkShaderModule vertShaderModule = CreateShaderModules((const uint32_t*)shaderBin[0]->GetBufferPointer(), shaderBin[0]->GetBufferSize(), device);
 			VkShaderModule fragShaderModule = CreateShaderModules((const uint32_t*)shaderBin[1]->GetBufferPointer(), shaderBin[1]->GetBufferSize(), device);
 
@@ -26,15 +29,34 @@ namespace IRun {
 				vertShaderCreateInfo, fragShaderCreateInfo
 			};
 
-			// TODO
+			VkVertexInputBindingDescription bindingDescription{};
+			// Can bind multiple streams of data, this defines which one.
+			bindingDescription.binding = 0;
+			// Size of each vertex object.
+			bindingDescription.stride = sizeof(Vertex); 
+			// For instancing. How to move between data after each vertex.
+			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+			std::array<VkVertexInputAttributeDescription, 1> attributeDescriptions{};
+
+			// position attribute
+			// Binds this attribute to VkVertexInputBindingDescription::binding = 0
+			attributeDescriptions[0].binding = 0;
+			// location in shader.
+			attributeDescriptions[0].location = 0;
+			// Size and type of data 32 bit float
+			attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+			// Location of attribute in each stride
+			attributeDescriptions[0].offset = 0;
+
 			VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
 			vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-			vertexInputCreateInfo.vertexBindingDescriptionCount = 0;
+			vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
 			// Basically does the same thing as glVertexAttribPointer. Handles data spacing/stride info.
-			vertexInputCreateInfo.pVertexAttributeDescriptions = nullptr;
-			vertexInputCreateInfo.vertexAttributeDescriptionCount = 0;
+			vertexInputCreateInfo.pVertexBindingDescriptions = &bindingDescription;
+			vertexInputCreateInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();
 			// Basically does the same thing as glVertexAttribPointer. Format and where to bind it to.
-			vertexInputCreateInfo.pVertexAttributeDescriptions = nullptr;
+			vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 			VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo{};
 			inputAssemblyCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

@@ -4,6 +4,7 @@
 #include "Swapchain.h"
 #include "tools\File.h"
 #include "tools\dxc\HLSLCompiler.h"
+#include "Vertex.h"
 
 #include <string>
 
@@ -14,6 +15,10 @@ namespace IRun {
 		class GraphicsPipeline {
 		public:
 			GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderfilename, const Device& device, const Swapchain& swapchain);
+
+			inline const VkRenderPass GetRenderPass() const { return m_renderPass; }
+
+			inline const VkPipeline Get() const { return m_graphicsPipeline; }
 
 			void Destroy(const Device& device);
 		private:

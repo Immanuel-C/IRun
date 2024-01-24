@@ -107,6 +107,8 @@ namespace IRun {
 					return presentMode;
 			}
 
+			I_LOG_WARNING("VK_PRESENT_MODE_MAILBOX_KHR or VK_PRESENT_MODE_IMMEDIATE_KHR is not supported fallback to VK_PRESENT_MODE_FIFO_KHR! Try using another Graphics API if you don't want to use vSync");
+
 			// Required by Vulkan spec
 			return VK_PRESENT_MODE_FIFO_KHR;
 		}
@@ -154,7 +156,10 @@ namespace IRun {
 			VkImageView imageView;
 			VK_CHECK(vkCreateImageView(device.Get().first, &createInfo, nullptr, &imageView), "Failed to create swapchain image view");
 
+			
+
 			return imageView;
 		}
+
 	}
 }

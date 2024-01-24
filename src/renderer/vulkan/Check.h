@@ -8,6 +8,7 @@
 #define VK_CHECK(x, s) {VkResult result = x;                                                                 \
 					if (result != VK_SUCCESS) {															 \
 						I_LOG_FATAL_ERROR("Vulkan function failed! Message:%s\nError: %s", s, string_VkResult(result)); \
+						exit(EXIT_FAILURE);																				\
 					}}																				 
 #else
 #define VK_CHECK(x, s) x; s;

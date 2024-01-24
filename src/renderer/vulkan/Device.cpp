@@ -92,6 +92,7 @@ namespace IRun {
 				return a.second < b.second;
 				});
 
+			// Organize same queue families into a group
 			std::vector<std::unordered_map<QueueType, int>> sameQueueFamilies{};
 			sameQueueFamilies.resize(1);
 			int vectorSize = 0, prevQueueFamilyIndex = queueFamiliesSorted[0].second;
@@ -120,6 +121,7 @@ namespace IRun {
 			vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &queueFamilyCount, queueFamilies.data());
 
 
+			// Create queues in same queue family
 			int i = 0;
 			for (const std::unordered_map<QueueType, int>& sameQueueFamily : sameQueueFamilies) {
 				VkDeviceQueueCreateInfo queueCreateInfo{};
@@ -183,6 +185,7 @@ namespace IRun {
 			I_DEBUG_LOG_TRACE("Created Vulkan device: 0x%p", m_device);
 
 
+			// Retrieve the queues
 			for (const std::unordered_map<QueueType, int>& sameQueueFamily : sameQueueFamilies) {
 				i = 0;
 				for (auto itr = sameQueueFamily.begin(); itr != sameQueueFamily.end(); itr++) {
@@ -214,7 +217,7 @@ namespace IRun {
 		};
 
 
-		void CompareQueueCounts(QueueType type, std::unordered_map<QueueType, QueueFamilyCount>& supportedQueuesinQueueFamilies, VkQueueFamilyProperties queueFamilyProps, int currentIndex) {
+		static void CompareQueueCounts(QueueType type, std::unordered_map<QueueType, QueueFamilyCount>& supportedQueuesinQueueFamilies, VkQueueFamilyProperties queueFamilyProps, int currentIndex) {
 			// Check if QueueType is in map if not create a new key.
 			if (supportedQueuesinQueueFamilies.find(type) == supportedQueuesinQueueFamilies.end())
 				supportedQueuesinQueueFamilies.insert({ type, { currentIndex, queueFamilyProps.queueCount } });
@@ -342,8 +345,6 @@ namespace IRun {
 				swapchainDetails.presentModes.resize(presentModeCount);
 				vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.Get(), &presentModeCount, swapchainDetails.presentModes.data());
 			}
-
-			
 
 			return swapchainDetails;
 		}
