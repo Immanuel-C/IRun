@@ -4,8 +4,17 @@
 namespace IRun {
 	namespace Tools {
 		namespace DXC {
-			std::array<CComPtr<IDxcBlob>, 2> CompileHLSLtoSPRIV(const std::string& vertShaderFilename, const std::string& fragmentShaderFilename)
+			std::array<std::vector<char>, 2> CompileHLSLtoSPRIV(const std::string& vertShaderFilename, const std::string& fragmentShaderFilename)
 			{
+				std::vector<char> finalVertCode{};
+				std::vector<char> finalFragCode{};
+
+				std::string vertShaderSource = ReadFile(vertShaderFilename);
+				std::string fragShaderSource = ReadFile(fragmentShaderFilename);
+
+				if (!finalVertCode.empty() && !finalFragCode.empty()) return {finalVertCode, finalFragCode};
+
+
 				HRESULT result;
 
 				// Init DXC
@@ -15,6 +24,7 @@ namespace IRun {
 					I_LOG_FATAL_ERROR("Failed to init dxc library! Abort!");
 					exit(EXIT_FAILURE);
 				}
+
 
 				// Init DXC compiler
 				CComPtr<IDxcCompiler3> compiler;
@@ -32,9 +42,6 @@ namespace IRun {
 					exit(EXIT_FAILURE);
 				}
 
-
-				std::string vertShaderSource = ReadFile(vertShaderFilename);
-				std::string fragShaderSource = ReadFile(fragmentShaderFilename);
 
 				if (vertShaderSource == "" || fragShaderSource == "") {
 					I_LOG_FATAL_ERROR("Failed to read shader file(s): %s,\n%s\nAbort!", vertShaderFilename, fragmentShaderFilename);
@@ -86,7 +93,6 @@ namespace IRun {
 				
 				}
 
-
 				DxcBuffer fragBuf{};
 				fragBuf.Encoding = DXC_CP_ACP;
 				fragBuf.Ptr = fragShaderSource.c_str();
@@ -114,6 +120,7 @@ namespace IRun {
 					}
 				}
 
+
 				CComPtr<IDxcBlob> vertCode;
 				vertBinSource->GetResult(&vertCode);
 				CComPtr<IDxcBlob> fragCode;
@@ -122,9 +129,15 @@ namespace IRun {
 				fragBinSource.Release();
 				utils.Release();
 				compiler.Release();
+				
+				
+				finalVertCode = { (char*)vertCode->GetBufferPointer(), (char*)vertCode->GetBufferPointer() + vertCode->GetBufferSize() };
+				finalFragCode = { (char*)fragCode->GetBufferPointer(), (char*)fragCode->GetBufferPointer() + fragCode->GetBufferSize() };
 
+				vertCode.Release();
+				fragCode.Release();
 
-				return { vertCode, fragCode };
+				return { finalVertCode, finalFragCode };
 			}
 		}
 	}

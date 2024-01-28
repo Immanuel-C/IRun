@@ -68,10 +68,9 @@ namespace IRun {
 
 			I_ASSERT_FATAL_ERROR(!m_physicalDevice, "No suitable physical devices available! Abort!");
 
-			VkPhysicalDeviceProperties deviceProps{};
-			vkGetPhysicalDeviceProperties(m_physicalDevice, &deviceProps);
+			vkGetPhysicalDeviceProperties(m_physicalDevice, &m_deviceProperties);
 
-			I_LOG_INFO("Device Name: %s, Device Type: %s", deviceProps.deviceName, string_VkPhysicalDeviceType(deviceProps.deviceType));
+			I_LOG_INFO("Device Name: %s, Device Type: %s", m_deviceProperties.deviceName, string_VkPhysicalDeviceType(m_deviceProperties.deviceType));
 
 			m_indices = FindQueueFamilies(m_physicalDevice, surface);
 			m_swapchainDetails = FindSwapchainDetails(m_physicalDevice, surface);

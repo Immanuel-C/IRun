@@ -2,15 +2,16 @@
 
 #include "Swapchain.h"
 #include "Device.h"
+#include "RenderPass.h"
 
 namespace IRun {
 	namespace Vk {
 		class Framebuffers {
 		public:
 			Framebuffers() = default;
-			Framebuffers(const Swapchain& swapchain, VkRenderPass renderPass, const Device& device);
+			Framebuffers(Swapchain& swapchain, RenderPass& renderPass, Device& device);
 
-			void Destroy(const Device& device);
+			void Destroy(Device& device);
 
 			const inline std::vector<VkFramebuffer>& Get() const { return m_framebuffers; }
 

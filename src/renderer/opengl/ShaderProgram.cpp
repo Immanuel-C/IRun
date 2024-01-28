@@ -13,14 +13,14 @@ namespace IRun {
 
 			//std::string vertexShaderSource = Tools::ReadFile(vertexShaderFilename, std::ios::binary);
 
-			std::array<CComPtr<IDxcBlob>, 2> shaderBin = Tools::DXC::CompileHLSLtoSPRIV(vertexShaderFilename, fragmentShaderFilename);
+			std::array<std::vector<char>, 2> shaderBin = Tools::DXC::CompileHLSLtoSPRIV(vertexShaderFilename, fragmentShaderFilename);
 
 			vertexShader = glCreateShader(GL_VERTEX_SHADER);
 			// const char* vertexShaderSourceCStr = vertexShaderSource.c_str();
 			// glShaderSource(vertexShader, 1, &vertexShaderSourceCStr, nullptr);
 			// glCompileShader(vertexShader);
 
-			glShaderBinary(1, &vertexShader, GL_SHADER_BINARY_FORMAT_SPIR_V, shaderBin[0]->GetBufferPointer(), (int)shaderBin[0]->GetBufferSize());
+			glShaderBinary(1, &vertexShader, GL_SHADER_BINARY_FORMAT_SPIR_V, shaderBin[0].data(), (int)shaderBin[0].size());
 			glSpecializeShader(vertexShader, "main", 0, 0, 0);
 
 			glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
@@ -36,7 +36,7 @@ namespace IRun {
 			// glShaderSource(fragmentShader, 1, &fragmentShaderSourceCStr, nullptr);
 			// glCompileShader(fragmentShader);
 
-			glShaderBinary(1, &fragmentShader, GL_SHADER_BINARY_FORMAT_SPIR_V, shaderBin[1]->GetBufferPointer(), (int)shaderBin[1]->GetBufferSize());
+			glShaderBinary(1, &fragmentShader, GL_SHADER_BINARY_FORMAT_SPIR_V, shaderBin[1].data(), (int)shaderBin[1].size());
 			glSpecializeShader(fragmentShader, "main", 0, 0, 0);
 
 			glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
@@ -59,9 +59,6 @@ namespace IRun {
 
 			glDeleteShader(vertexShader);
 			glDeleteShader(fragmentShader);
-
-			shaderBin[0].Release();
-			shaderBin[1].Release();
 		}
 	}
 }

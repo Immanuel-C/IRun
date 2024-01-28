@@ -41,7 +41,8 @@ workspace "IRun"
             "%{prj.location}/../deps/imgui/",
             "%{prj.location}/../src/",
             vulkanSdk .. "/Include",
-            "%{prj.location}/../deps/glm"
+            "%{prj.location}/../deps/glm",
+            "%{prj.location}/../deps/CNtity/include"
         }
 
         files {"%{prj.location}/**.cpp", "%{prj.location}/**.h",}
@@ -65,7 +66,8 @@ workspace "IRun"
             "%{prj.location}/../deps/IWindow/src",
             "%{prj.location}/../deps/imgui/",
             vulkanSdk .. "/Include",
-            "%{prj.location}/../deps/glm"
+            "%{prj.location}/../deps/glm",
+            "%{prj.location}/../deps/CNtity/include"
         }
 
         files {"%{prj.location}/**.cpp", "%{prj.location}/**.h",}

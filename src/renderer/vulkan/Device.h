@@ -56,6 +56,10 @@ namespace IRun {
 			/// </summary>
 			/// <returns>swapchain details</returns>
 			const inline SwapchainDetails& GetSwapchainDetails() const { return m_swapchainDetails; }
+			/// <summary>
+			/// Get the physical device properties.
+			/// </summary>
+			const inline VkPhysicalDeviceProperties& GetDeviceProperties() const { return m_deviceProperties; }
 			// Delete copy constructor because VkDevice could be deleted by another copy.
 			Device(const Device&) = delete;
 			// Delete copy constructor because VkDevice could be deleted by another copy.
@@ -63,6 +67,8 @@ namespace IRun {
 		private:
 			VkPhysicalDevice m_physicalDevice = nullptr;
 			VkDevice m_device;
+
+			VkPhysicalDeviceProperties m_deviceProperties;
 
 			std::unordered_map<QueueType, VkQueue> m_queues;
 

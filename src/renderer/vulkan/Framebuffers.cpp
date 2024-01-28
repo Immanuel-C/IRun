@@ -4,7 +4,7 @@
 namespace IRun {
 	namespace Vk {
 
-		Framebuffers::Framebuffers(const Swapchain& swapchain, VkRenderPass renderPass, const Device& device) {
+		Framebuffers::Framebuffers(Swapchain& swapchain, RenderPass& renderPass, Device& device) {
 			m_framebuffers.resize(swapchain.GetSwapchainImages().size());
 
 
@@ -16,7 +16,7 @@ namespace IRun {
 
 				VkFramebufferCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-				createInfo.renderPass = renderPass;
+				createInfo.renderPass = renderPass.Get();
 				createInfo.attachmentCount = (uint32_t)attachments.size();
 				// Index of array matches indices of array VkRenderPassCreateInfo::pAttachments
 				createInfo.pAttachments = attachments.data();
@@ -29,7 +29,7 @@ namespace IRun {
 			}
 		}
 
-		void Framebuffers::Destroy(const Device& device) {
+		void Framebuffers::Destroy(Device& device) {
 			for (const VkFramebuffer& framebuffer : m_framebuffers) {
 				I_DEBUG_LOG_TRACE("Destroyed Vulkan framebuffer: 0x%p", framebuffer);
 				vkDestroyFramebuffer(device.Get().first, framebuffer, nullptr);

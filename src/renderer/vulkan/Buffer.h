@@ -7,7 +7,7 @@
 
 namespace IRun {
 	namespace Vk {
-		template<typename dataType, size_t dataSize>
+		template<typename DataType, size_t dataSize>
 		class Buffer {
 		public:
 			Buffer() = default;
@@ -15,11 +15,11 @@ namespace IRun {
 			// VkSharingModeExclusive
 			// VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
 			// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-			Buffer(Device& device, dataType* data, VkBufferUsageFlags flags, VkSharingMode sharingMode, VkMemoryPropertyFlags propertyFlags) {
+			Buffer(Device& device, DataType* data, VkBufferUsageFlags flags, VkSharingMode sharingMode, VkMemoryPropertyFlags propertyFlags) {
 				VkBufferCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 				// size in bytes
-				createInfo.size = sizeof(dataType) * dataSize;
+				createInfo.size = sizeof(DataType) * dataSize;
 				createInfo.usage = flags;
 				createInfo.sharingMode = sharingMode;
 
@@ -32,6 +32,8 @@ namespace IRun {
 				allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 				allocInfo.allocationSize = memoryRequirments.size;
 				allocInfo.memoryTypeIndex = FindMemoryTypeIndex(device, memoryRequirments.memoryTypeBits, propertyFlags);
+
+				I_ASSERT_FATAL_ERROR(allocInfo.memoryTypeIndex == UINT32_MAX, "Failed to find a suitable memory type index for allocation Vulkan device memory!");
 
 				VK_CHECK(vkAllocateMemory(device.Get().first, &allocInfo, nullptr, &m_memory), "Failed to allocate Vulkan device memory");
 
@@ -64,7 +66,7 @@ namespace IRun {
 				VkPhysicalDeviceMemoryProperties memoryProperties{};
 				vkGetPhysicalDeviceMemoryProperties(device.Get().second, &memoryProperties);
 
-				for (int i = 0; i < memoryProperties.memoryTypeCount; i++) {
+				for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
 					// Black magic
 					// Index of memory type must match bit in allowedTypes
 					// Desired property flags must be available in physical memory property flags
@@ -72,6 +74,8 @@ namespace IRun {
 						return i;
 					}
 				}
+
+				return UINT32_MAX;
 			}
 		};
 	}

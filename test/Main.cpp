@@ -108,11 +108,14 @@ int TestGL() {
 #include <renderer/vulkan/Surface.h>
 #include <renderer/vulkan/Device.h>
 #include <renderer/vulkan/Swapchain.h>
+#include <renderer/vulkan/PipelineCache.h>
 #include <renderer/vulkan/GraphicsPipeline.h>
 #include <renderer/vulkan/Framebuffers.h>
 #include <renderer/vulkan/CommandPool.h>
 #include <renderer/vulkan/Sync.h>
 #include <renderer/vulkan/Buffer.h>
+
+#include <tools/Timer.h>
 
 #include <thread>
 
@@ -127,8 +130,21 @@ int TestVK() {
     IRun::Vk::Surface surface{ window, instance };
     IRun::Vk::Device device{ instance, surface };
     IRun::Vk::Swapchain swapchain{ false, window, surface, device };
-    IRun::Vk::GraphicsPipeline graphicsPipeline{ "shaders/vulkanVert.hlsl", "shaders/vulkanFrag.hlsl", device, swapchain };
-    IRun::Vk::Framebuffers framebuffers{ swapchain, graphicsPipeline.GetRenderPass(), device };
+    IRun::Vk::RenderPass renderPass{ device, swapchain };
+    IRun::Vk::PipelineCache pipelineCache{};
+    // For first run
+    if (pipelineCache.RetrieveCache("shaders/cache/PipelineCache.bin", device) == VK_INCOMPLETE) {
+        pipelineCache.CreateCache(device, nullptr, 0);
+    }
+
+    IRun::Tools::Timer<IRun::Tools::Milliseconds> timer{};
+    timer.Start();
+    IRun::Vk::GraphicsPipeline graphicsPipeline{ "shaders/Vert.hlsl", "shaders/Frag.hlsl", device, swapchain, renderPass, nullptr, pipelineCache };
+    double timerVal = timer.Stop();
+
+    I_LOG_INFO("Creating graphics pipeline took: %fms", timerVal);
+
+    IRun::Vk::Framebuffers framebuffers{ swapchain, renderPass, device };
     IRun::Vk::CommandPool commandPool{ device, device.GetQueueFamilies().graphicsFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT };
     std::vector<IRun::Vk::CommandBuffer> commandBuffers{};
     
@@ -160,7 +176,7 @@ int TestVK() {
 
     VkRenderPassBeginInfo renderPassBeginInfo{};
     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassBeginInfo.renderPass = graphicsPipeline.GetRenderPass();
+    renderPassBeginInfo.renderPass = renderPass.Get();
     renderPassBeginInfo.framebuffer = nullptr;
     renderPassBeginInfo.renderArea.offset = { 0, 0 };
     renderPassBeginInfo.renderArea.extent = swapchain.GetChosenSwapchainDetails().first;
@@ -260,6 +276,8 @@ int TestVK() {
     // Wait until the device isn't doing anything
     vkDeviceWaitIdle(device.Get().first);
 
+    pipelineCache.SaveCache("shaders/cache/PipelineCache.bin", device);
+
     shape.Destroy(device);
     for (IRun::Vk::Sync<IRun::Vk::Fence>& fence : drawFences)
         fence.Destroy(device);
@@ -270,10 +288,62 @@ int TestVK() {
     commandPool.Destroy(device);
     framebuffers.Destroy(device);
     graphicsPipeline.Destroy(device);
+    pipelineCache.Destroy(device);
+    renderPass.Destroy(device);
     swapchain.Destroy(device);
     device.Destroy();
     surface.Destroy(instance);
     instance.Destroy();
+
+    return EXIT_SUCCESS;
+}
+
+#include <ecs\Components.h>
+
+int TestECS() {
+    IRun::ECS::Helper helper{};
+
+    helper.index<IRun::ECS::VertexData, IRun::ECS::Shader>("VertexData", "Shader");
+
+    std::vector<float> vertexData = {
+        1.0f, 0.0f,  1.0f,
+        0.5f, 0.14f, 0.12532523f
+    };
+
+    IRun::ECS::Entity entity = helper.create<IRun::ECS::VertexData, IRun::ECS::Shader>(
+        {
+            vertexData
+        }, 
+        {
+            "vert/file/name.hlsl",
+            "frag/file/name.hlsl",
+        }
+    );
+
+    IRun::ECS::SerializedEntity serializedEntity = IRun::ECS::Serialize<IRun::ECS::VertexData, IRun::ECS::Shader>(helper, entity);
+
+    IRun::ECS::Entity deserializedEntity = IRun::ECS::Deserialize<IRun::ECS::VertexData, IRun::ECS::Shader>(helper, serializedEntity);
+
+    auto [data, shader] = helper.get<IRun::ECS::VertexData, IRun::ECS::Shader>(entity);
+
+    return EXIT_SUCCESS;
+}
+
+#include <renderer\vulkan\Renderer.h>
+
+int TestRendererVk() {
+    IWindow::Window window{};
+
+    window.Create(800, 600, "Hello IRun!");
+
+    IRun::Vk::Renderer renderer{ window, true };
+
+    while (window.IsRunning()) {
+
+        window.Update();
+    }
+
+    renderer.Destroy();
 
     return EXIT_SUCCESS;
 }
