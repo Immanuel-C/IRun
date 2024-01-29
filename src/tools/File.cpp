@@ -2,12 +2,11 @@
 
 namespace IRun {
 	namespace Tools {
-		CREATE_FLAGS_FROM_ENUM_STRUCT(IoFlags)
 
 		static int ConvertIoFlagsToStlFlags(IoFlags flags) {
 			int finalFlags = 0;
-			if (flags & IoFlags::Binary) finalFlags |= std::ios::binary;
-			if (flags & IoFlags::Discard) finalFlags |= std::ios::trunc;
+			if ((int64_t)(flags & IoFlags::Binary)) finalFlags |= std::ios::binary;
+			if ((int64_t)(flags & IoFlags::Discard)) finalFlags |= std::ios::trunc;
 			return finalFlags;
 		}
 
@@ -66,7 +65,7 @@ namespace IRun {
 		void WriteFile(const std::string& filename, const std::vector<char>& content, IoFlags flags) {
 			std::fstream file{};
 
-			if (!(flags & IoFlags::CreateFile)) {
+			if (!(int64_t)(flags & IoFlags::Create)) {
 				file.open(filename, std::ios::in);
 
 				if (!file.is_open()) {
@@ -92,7 +91,7 @@ namespace IRun {
 		void WriteFile(const std::wstring& filename, const std::vector<wchar_t>& content, IoFlags flags) {
 			std::wfstream file{};
 
-			if (!(flags & IoFlags::CreateFile)) {
+			if (!(int64_t)(flags & IoFlags::Create)) {
 				file.open(filename, std::ios::in);
 
 				if (!file.is_open()) {

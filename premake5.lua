@@ -46,6 +46,8 @@ workspace "IRun"
         }
 
         files {"%{prj.location}/**.cpp", "%{prj.location}/**.h",}
+        
+        defines { "_CRT_SECURE_NO_WARNINGS" }
 
         links {"IRun", "ImGui"}
 
@@ -74,6 +76,8 @@ workspace "IRun"
         
         libdirs { vulkanSdk .. "/Lib" }
         links {"OpenGL32", "Vulkan-1", "IWindow", "ILog", "ImGui", "Glad", "Dxcompiler", "glslang", "HLSL", "OSDependent", "OGLCompiler", "SPIRV"}
+
+        defines { "_CRT_SECURE_NO_WARNINGS" }
 
         defaultBuildLocation()
         defaultBuildCfg()

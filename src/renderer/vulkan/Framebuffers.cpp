@@ -3,10 +3,8 @@
 
 namespace IRun {
 	namespace Vk {
-
 		Framebuffers::Framebuffers(Swapchain& swapchain, RenderPass& renderPass, Device& device) {
 			m_framebuffers.resize(swapchain.GetSwapchainImages().size());
-
 
 			for (int i = 0; i < m_framebuffers.size(); i++) {
 				// Only have a colour attachment (for now)
@@ -34,7 +32,6 @@ namespace IRun {
 				I_DEBUG_LOG_TRACE("Destroyed Vulkan framebuffer: 0x%p", framebuffer);
 				vkDestroyFramebuffer(device.Get().first, framebuffer, nullptr);
 			}
-				
 		}
 
 	}

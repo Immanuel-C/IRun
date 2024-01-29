@@ -81,7 +81,7 @@ namespace IRun {
 			return { iRunPipelineCache, { size + sizeOfIRunHeader } };
 		}
 
-		VkResult PipelineCache::SaveCache(const std::string& filename, Device& device) {
+		ErrorCode PipelineCache::SaveCache(const std::string& filename, Device& device) {
 			size_t dataSize = 0;
 
 			VK_CHECK(vkGetPipelineCacheData(device.Get().first, m_pipelineCache, &dataSize, nullptr), "Failed to get pipeline cache data!");
@@ -110,7 +110,7 @@ namespace IRun {
 			if (!file.is_open()) {
 				I_LOG_ERROR("Failed to save cache at: %s", filename.c_str());
 				file.close();
-				return VK_INCOMPLETE;
+				return ErrorCode::IoError;
 			}
 
 			file.write((char*)convertedData.first, convertedData.second);
@@ -120,10 +120,10 @@ namespace IRun {
 			delete[] convertedData.first;
 			delete[] cacheData;
 
-			return VK_SUCCESS;
+			return ErrorCode::Success;
 		}
 
-		VkResult PipelineCache::CreateCache(Device& device, uint8_t* dataCache, size_t dataSize) {
+		ErrorCode PipelineCache::CreateCache(Device& device, uint8_t* dataCache, size_t dataSize) {
 			VkPipelineCacheCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
 			createInfo.initialDataSize = dataSize;
@@ -131,17 +131,17 @@ namespace IRun {
 
 			VK_CHECK(vkCreatePipelineCache(device.Get().first, &createInfo, nullptr, &m_pipelineCache), "Failed to create pipeline cache!");
 
-			return VK_SUCCESS;
+			return ErrorCode::Success;
 		}
 
-		VkResult PipelineCache::RetrieveCache(const std::string& filename, Device& device) {
+		ErrorCode PipelineCache::RetrieveCache(const std::string& filename, Device& device) {
 			std::ifstream file{};
 
 			file.open(filename, std::ios::binary | std::ios::ate);
 
 			if (!file.is_open()) {
 				file.close();
-				return VK_INCOMPLETE;
+				return ErrorCode::IoError;
 			}
 
 			size_t cacheDataSize = (size_t)file.tellg();
@@ -190,7 +190,8 @@ namespace IRun {
 			if (badCache) {
 				delete[] cacheData;
 				delete[] cacheDataWithoutHeader;
-				return VK_INCOMPLETE;
+
+				return ErrorCode::Corrupt;
 			}
 
 			std::pair<uint8_t*, uint32_t> convertedCache = ConvertIRunPipelineCacheToVulkanPipelineCache(m_header, cacheDataWithoutHeader, VK_PIPELINE_CACHE_HEADER_VERSION_ONE);
@@ -200,7 +201,7 @@ namespace IRun {
 			delete[] convertedCache.first;
 			delete[] cacheDataWithoutHeader;
 
-			return VK_SUCCESS;
+			return ErrorCode::Success;
 		}
 
 		void PipelineCache::Destroy(Device& device) {

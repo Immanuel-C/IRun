@@ -4,8 +4,6 @@
 
 namespace IRun {
 	namespace Tools {
-
-
 		using Nanosecond = std::chrono::duration<double, std::ratio<1, 1000000000>>;
 		using Microseconds = std::chrono::duration<double, std::ratio<1, 1000000>>;
 		using Milliseconds = std::chrono::duration<double, std::ratio<1, 1000>>;
@@ -29,7 +27,6 @@ namespace IRun {
 			/// Stops the timer and returns the amount of time passed since starting the timer.
 			/// </summary>
 			/// <returns>time passed since the timer</returns>
-
 			double Stop() {
 				Period dur = (std::chrono::high_resolution_clock::now() - m_startTime);
 				return dur.count();

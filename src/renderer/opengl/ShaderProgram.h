@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glad\glad.h>
 #include "tools\File.h"
+#include <glad\glad.h>
 
 namespace IRun {
 	namespace GL {

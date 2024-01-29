@@ -11,18 +11,30 @@ namespace IRun {
 	namespace Tools {
 
 		enum struct IoFlags {
+			/// <summary>
+			/// No flags provided.
+			/// </summary>
 			None = 0x0ULL,
-			CreateFile = 0x1ULL,
+			/// <summary>
+			/// Create file if it doesn't exist. Only works when writing to a file.
+			/// </summary>
+			Create = 0x1ULL,
+			/// <summary>
+			/// Treat the data passed in as binary data. 
+			/// </summary>
 			Binary = 0x2ULL,
+			/// <summary>
+			/// Discard any data in a file already. Only works when writing to a file.
+			/// </summary>
 			Discard = 0x4ULL,
+			/// <summary>
+			/// Max value of IoFlags.
+			/// </summary>
+			Max
 		};
+		CREATE_FLAGS_FROM_ENUM_STRUCT(IoFlags, IoFlags::Max)
 
-		/// <summary>
-		/// Read file and return as a string.
-		/// </summary>
-		/// <param name="filename">Path of the file that the function is going to read.</param>
-		/// <param name="flags">These flags will be used when calling std::ifstream::open(). std::ios::ate is already defined to not use again.</param>
-		/// <returns></returns>
+
 		std::string ReadFile(const std::string& filename, IoFlags flags = IoFlags::None);
 		std::wstring ReadFile(const std::wstring& filename, IoFlags flags = IoFlags::None);
 		void WriteFile(const std::string& filename, const std::string& content, IoFlags flags = IoFlags::None);

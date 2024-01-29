@@ -1,15 +1,36 @@
 #include "GraphicsPipeline.h"
 
+#include "tools/Timer.h"
+
 namespace IRun {
 	namespace Vk {
-		GraphicsPipeline::GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderFilename, Device& device, Swapchain& swapchain, RenderPass& renderPass, GraphicsPipeline* basePipeline, PipelineCache& pipelineCache) {
+		GraphicsPipeline::GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderFilename, ShaderLanguage lang, Device& device, Swapchain& swapchain, RenderPass& renderPass, GraphicsPipeline* basePipeline, PipelineCache& pipelineCache) {
 
-			std::array<std::vector<char>, 2> shaderBin = Tools::DXC::CompileHLSLtoSPRIV(vertShaderFilename, fragShaderFilename);
+			VkShaderModule vertShaderModule{};
+			VkShaderModule fragShaderModule{};
 
+			
+			switch (lang)
+			{
+			case IRun::ShaderLanguage::HLSL: {
+				std::array<std::vector<char>, 2> shaderBin = Tools::DXC::CompileHLSLtoSPRIV(vertShaderFilename, fragShaderFilename);
+				vertShaderModule = CreateShaderModules((const uint32_t*)shaderBin[0].data(), shaderBin[0].size(), device);
+				fragShaderModule = CreateShaderModules((const uint32_t*)shaderBin[1].data(), shaderBin[1].size(), device);
+				break;
+			}
+			case IRun::ShaderLanguage::Spriv: {
+				std::string vertShaderCode = Tools::ReadFile(vertShaderFilename, Tools::IoFlags::Binary);
+				std::string fragShaderCode = Tools::ReadFile(fragShaderFilename, Tools::IoFlags::Binary);
+				vertShaderModule = CreateShaderModules((uint32_t*)vertShaderCode.c_str(), vertShaderCode.size(), device);
+				fragShaderModule = CreateShaderModules((uint32_t*)fragShaderCode.c_str(), vertShaderCode.size(), device);
+				break;
+			}
+			default:
+				I_DEBUG_LOG_FATAL_ERROR("GraphicsPipeline::GraphicsPipeline(const std::string&, const std::string&, ShaderLanguage, Device&, Swapchain&, RenderPass&, GraphicsPipeline*, PipelineCache&): param ShaderLangauge is not a valid language type.");
+				break;
+			}
 
-			VkShaderModule vertShaderModule = CreateShaderModules((const uint32_t*)shaderBin[0].data(), shaderBin[0].size(), device);
-			VkShaderModule fragShaderModule = CreateShaderModules((const uint32_t*)shaderBin[1].data(), shaderBin[1].size(), device);
-
+			
 			VkPipelineShaderStageCreateInfo vertShaderCreateInfo{};
 			vertShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			vertShaderCreateInfo.module = vertShaderModule;
@@ -177,9 +198,12 @@ namespace IRun {
 			// Base this pipeline off of another pipeline in an array of pipeline create infos (not used since we only have one pipline)
 			graphicsPipelineCreateInfo.basePipelineIndex = -1;
 
-
+			IRun::Tools::Timer<IRun::Tools::Milliseconds> timer{};
+			timer.Start();
 			VK_CHECK(vkCreateGraphicsPipelines(device.Get().first, pipelineCache.Get().second, 1, &graphicsPipelineCreateInfo, nullptr, &m_graphicsPipeline), "Failed to create graphics pipeline!");
+			double timeToCreateGraphicsPipeline = timer.Stop();
 			I_DEBUG_LOG_TRACE("Created Vulkan graphics pipeline: 0x%p", m_graphicsPipeline);
+			I_DEBUG_LOG_INFO("Time took to create graphics pipeline: %fms", timeToCreateGraphicsPipeline);
 
 
 			I_DEBUG_LOG_TRACE("Destroyed Vulkan shader module: 0x%p", vertShaderModule);

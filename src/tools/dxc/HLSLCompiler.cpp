@@ -6,14 +6,8 @@ namespace IRun {
 		namespace DXC {
 			std::array<std::vector<char>, 2> CompileHLSLtoSPRIV(const std::string& vertShaderFilename, const std::string& fragmentShaderFilename)
 			{
-				std::vector<char> finalVertCode{};
-				std::vector<char> finalFragCode{};
-
 				std::string vertShaderSource = ReadFile(vertShaderFilename);
 				std::string fragShaderSource = ReadFile(fragmentShaderFilename);
-
-				if (!finalVertCode.empty() && !finalFragCode.empty()) return {finalVertCode, finalFragCode};
-
 
 				HRESULT result;
 
@@ -130,6 +124,8 @@ namespace IRun {
 				utils.Release();
 				compiler.Release();
 				
+				std::vector<char> finalVertCode{};
+				std::vector<char> finalFragCode{};
 				
 				finalVertCode = { (char*)vertCode->GetBufferPointer(), (char*)vertCode->GetBufferPointer() + vertCode->GetBufferSize() };
 				finalFragCode = { (char*)fragCode->GetBufferPointer(), (char*)fragCode->GetBufferPointer() + fragCode->GetBufferSize() };

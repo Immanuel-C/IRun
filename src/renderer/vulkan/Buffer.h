@@ -7,20 +7,30 @@
 
 namespace IRun {
 	namespace Vk {
+		/// <summary>
+		/// Wrapper for a VkBuffer. This data is stored on the Gpu.
+		/// </summary>
+		/// <typeparam name="DataType">Type of data to be stored.</typeparam>
+		/// <typeparam name="dataSize">Size of data to be stored.</typeparam>
 		template<typename DataType, size_t dataSize>
 		class Buffer {
 		public:
 			Buffer() = default;
 
-			// VkSharingModeExclusive
-			// VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-			// VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-			Buffer(Device& device, DataType* data, VkBufferUsageFlags flags, VkSharingMode sharingMode, VkMemoryPropertyFlags propertyFlags) {
+			/// <summary>
+			/// Init buffer.
+			/// </summary>
+			/// <param name="device">A valid IRun::Vk::Device.</param>
+			/// <param name="data">Data that is to be stored.</param>
+			/// <param name="usageFlags">Usage of the buffer. Must be a valid VkBufferUsageFlags.</param>
+			/// <param name="sharingMode">Allow sharing between queue families. Must be a valid VkSharingMode.</param>
+			/// <param name="propertyFlags">Properties of the buffers. Must be a valid VkMemoryPropertyFlags.</param>
+			Buffer(Device& device, DataType* data, VkBufferUsageFlags usageFlags, VkSharingMode sharingMode, VkMemoryPropertyFlags propertyFlags) {
 				VkBufferCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 				// size in bytes
 				createInfo.size = sizeof(DataType) * dataSize;
-				createInfo.usage = flags;
+				createInfo.usage = usageFlags;
 				createInfo.sharingMode = sharingMode;
 
 				VK_CHECK(vkCreateBuffer(device.Get().first, &createInfo, nullptr, &m_buffer), "Failed to create Vulkan buffer!");
@@ -46,22 +56,26 @@ namespace IRun {
 				memcpy(mappedData, data, (size_t)createInfo.size);
 				vkUnmapMemory(device.Get().first, m_memory);
 			}
-
-			void Destroy(Device& device) {
+			/// <summary>
+			/// Destroy the VkBuffer and free the VkDeviceMemory.
+			/// </summary>
+			/// <param name="device">A valid IRun::Vk::Device.</param>
+			inline void Destroy(Device& device) {
 				vkFreeMemory(device.Get().first, m_memory, nullptr);
 				vkDestroyBuffer(device.Get().first, m_buffer, nullptr);
 			}
-
-			size_t GetSize() const { return dataSize; }
-
-			const VkBuffer Get() const { return m_buffer; }
-			const VkDeviceMemory GetMemory() const { return m_memory; }
+			/// <returns>Size of the buffer.</returns>
+			const inline size_t GetSize() const { return dataSize; }
+			/// <returns>Handle to the VkBuffer</returns>
+			const inline VkBuffer Get() const { return m_buffer; }
+			/// <returns>Handle to the VkDeviceMemory</returns>
+			const inline VkDeviceMemory GetMemory() const { return m_memory; }
 
 		private:
 			VkBuffer m_buffer;
 			VkDeviceMemory m_memory;
 
-			uint32_t FindMemoryTypeIndex(Device& device, uint32_t allowedTypes, VkMemoryPropertyFlags propertyFlags) {
+			inline uint32_t FindMemoryTypeIndex(Device& device, uint32_t allowedTypes, VkMemoryPropertyFlags propertyFlags) {
 				// Props of the physical device memory
 				VkPhysicalDeviceMemoryProperties memoryProperties{};
 				vkGetPhysicalDeviceMemoryProperties(device.Get().second, &memoryProperties);

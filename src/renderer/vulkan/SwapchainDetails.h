@@ -2,16 +2,25 @@
 
 
 #include <vulkan\vulkan.h>
-#include <vulkan\vulkan_win32.h>
 #include <vector>
 
-struct SwapchainDetails {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
-};
+namespace IRun {
+	namespace Vk {
+		/// <summary>
+		/// Details that the swapchain need to create.
+		/// </summary>
+		struct SwapchainDetails {
+			VkSurfaceCapabilitiesKHR capabilities;
+			std::vector<VkSurfaceFormatKHR> formats;
+			std::vector<VkPresentModeKHR> presentModes;
+		};
 
-struct SwapchainImage {
-	VkImage image;
-	VkImageView view;
-};
+		/// <summary>
+		/// A wrapper for VkImage and VkImageView.
+		/// </summary>
+		struct SwapchainImage {
+			VkImage image;
+			VkImageView view;
+		};
+	}
+}

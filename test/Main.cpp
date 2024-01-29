@@ -1,4 +1,3 @@
-#include <glad/glad.h>
 #include <IWindow.h>
 #include <IWindowGL.h>
 
@@ -9,6 +8,8 @@
 #include <renderer/opengl/VertexArrayObject.h>
 #include <renderer/opengl/IndexBufferObject.h>
 #include <renderer/opengl/ShaderProgram.h>
+
+#include <glad/glad.h>
 
 int TestGL() {
     IWindow::Window window{};
@@ -122,6 +123,8 @@ int TestGL() {
 constexpr uint32_t MAX_FRAMES = 2;
 
 int TestVK() {
+    IRun::ErrorCode err;
+
     IWindow::Window window{};
 
     window.Create(800, 600, "Hello IRun!");
@@ -132,17 +135,20 @@ int TestVK() {
     IRun::Vk::Swapchain swapchain{ false, window, surface, device };
     IRun::Vk::RenderPass renderPass{ device, swapchain };
     IRun::Vk::PipelineCache pipelineCache{};
+    std::string pipelineCachingOn = "with caching";
+
     // For first run
-    if (pipelineCache.RetrieveCache("shaders/cache/PipelineCache.bin", device) == VK_INCOMPLETE) {
+    err = pipelineCache.RetrieveCache("shaders/cache/PipelineCache.bin", device);
+
+    if ((int64_t)(err & IRun::ErrorCode::IoError) || (int64_t)(err & IRun::ErrorCode::Corrupt)) {
         pipelineCache.CreateCache(device, nullptr, 0);
-    }
+        pipelineCachingOn = "without caching";
+    } 
 
-    IRun::Tools::Timer<IRun::Tools::Milliseconds> timer{};
-    timer.Start();
-    IRun::Vk::GraphicsPipeline graphicsPipeline{ "shaders/Vert.hlsl", "shaders/Frag.hlsl", device, swapchain, renderPass, nullptr, pipelineCache };
-    double timerVal = timer.Stop();
+    I_DEBUG_LOG_INFO("Creating pipelines %s!", pipelineCachingOn.c_str());
 
-    I_LOG_INFO("Creating graphics pipeline took: %fms", timerVal);
+    IRun::Vk::GraphicsPipeline graphicsPipeline{ "shaders/Vert.hlsl", "shaders/Frag.hlsl", IRun::ShaderLanguage::HLSL, device, swapchain, renderPass, nullptr, pipelineCache };
+
 
     IRun::Vk::Framebuffers framebuffers{ swapchain, renderPass, device };
     IRun::Vk::CommandPool commandPool{ device, device.GetQueueFamilies().graphicsFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT };

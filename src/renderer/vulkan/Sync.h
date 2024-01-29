@@ -6,20 +6,29 @@ namespace IRun {
 	namespace Vk {
 		typedef VkSemaphore Semaphore;
 		typedef VkFence Fence;
-
-		
-
+		/// <summary>
+		/// A wrapper for VkSemaphore and VkFence
+		/// </summary>
+		/// <typeparam name="SyncObj">Must be either IRun::Vk::Semapore or a IRun::Vk::Fence</typeparam>
 		template<typename SyncObj>
 		class Sync {
 		public:
 			Sync() = default;
+			/// <summary>
+			/// Creates the sync object. 
+			/// </summary>
+			/// <param name="device">A valid IRun::Vk::Device.</param>
+			/// <param name="flags">Flags for either VkSemaphoreCreateInfo::flags or VkFenceCreateInfo::flags. According to the Vulkan spec VkSemaphoreCreateInfo::flags should always be zero.</param>
 			Sync(Device& device, VkFlags flags = 0) {
 				if (std::is_same<SyncObj, Semaphore>().value) CreateSemaphore(device, flags);
 				else if (std::is_same<SyncObj, Fence>().value)  CreateFence(device, flags);
 				else I_LOG_FATAL_ERROR("typename SyncObj from class Sync must be VkSemaphore or VkFence!");
 				
 			}
-
+			/// <summary>
+			/// Destroys the sync object.
+			/// </summary>
+			/// <param name="device">A valid IRun::Vk::Device.</param>
 			void Destroy(Device& device) {
 				if (std::is_same<SyncObj, Semaphore>().value) { 
 					vkDestroySemaphore(device.Get().first, (VkSemaphore)m_syncHandle, nullptr); 
@@ -28,10 +37,9 @@ namespace IRun {
 				else if (std::is_same<SyncObj, Fence>().value) { 
 					vkDestroyFence(device.Get().first, (VkFence)m_syncHandle, nullptr);
 					I_DEBUG_LOG_TRACE("Destroyed Vulkan fence: 0x%p", m_syncHandle);
-
 				};
 			}
-
+			/// <returns>Handle to either VkSemaphore or VkFence.</returns>
 			inline SyncObj Get() const { return m_syncHandle; }
 		private:
 			SyncObj m_syncHandle = nullptr;
