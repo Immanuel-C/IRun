@@ -43,7 +43,6 @@ namespace IRun {
 		void CommandPool::BeginRecordingCommands(const Device& device, CommandBuffer commandBuffer) {
 			VkCommandBufferBeginInfo beginInfo{};
 			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
 			VK_CHECK(vkBeginCommandBuffer(m_commandBuffers[commandBuffer], &beginInfo), "Failed to begin Vulkan command buffer");
 		}
 		void CommandPool::EndRecordingCommands(CommandBuffer commandBuffer) {

@@ -205,6 +205,7 @@ namespace IRun {
 		}
 
 		void PipelineCache::Destroy(Device& device) {
+			m_header = {};
 			vkDestroyPipelineCache(device.Get().first, m_pipelineCache, nullptr);
 		}
 

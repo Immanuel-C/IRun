@@ -9,13 +9,20 @@
 #include <renderer/opengl/IndexBufferObject.h>
 #include <renderer/opengl/ShaderProgram.h>
 
+#include <math/Vector.h>
+
 #include <glad/glad.h>
+
+constexpr int64_t WIDTH = 1280, HEIGHT = 720;
+constexpr char const* TITLE = "Hello IRun!";
+
+constexpr IRun::Math::Color CLEAR_COLOUR = { 100, 215, 156 };
 
 int TestGL() {
     IWindow::Window window{};
     IWindow::GL::Context glcontext{};
 
-    if (!window.Create(800, 600, "Hello IRun!")) return EXIT_FAILURE;
+    if (!window.Create(WIDTH, HEIGHT, TITLE)) return EXIT_FAILURE;
 
     if (!glcontext.Create(window, 4, 6)) {
         std::cout << "Failed to create a IWindow context!\nThis is probably because your computor doesn't support the required version of OpenGL\n";
@@ -79,7 +86,7 @@ int TestGL() {
         ImGui::ShowDemoWindow();
         ImGui::Render();
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor((CLEAR_COLOUR.r / 255.0f), (CLEAR_COLOUR.g / 255.0f), (CLEAR_COLOUR.b / 255.0f), 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         shaderProgram.Bind();
@@ -104,216 +111,71 @@ int TestGL() {
     return EXIT_SUCCESS;
 }
 
-
-#include <renderer/vulkan/Instance.h>
-#include <renderer/vulkan/Surface.h>
-#include <renderer/vulkan/Device.h>
-#include <renderer/vulkan/Swapchain.h>
-#include <renderer/vulkan/PipelineCache.h>
-#include <renderer/vulkan/GraphicsPipeline.h>
-#include <renderer/vulkan/Framebuffers.h>
-#include <renderer/vulkan/CommandPool.h>
-#include <renderer/vulkan/Sync.h>
-#include <renderer/vulkan/Buffer.h>
-
-#include <tools/Timer.h>
-
+#include <ecs\Components.h>
+#include <renderer/vulkan/Renderer.h>
 #include <thread>
 
-constexpr uint32_t MAX_FRAMES = 2;
-
-int TestVK() {
-    IRun::ErrorCode err;
-
+int TestRendererVk() {
     IWindow::Window window{};
 
-    window.Create(800, 600, "Hello IRun!");
+    window.Create(WIDTH, HEIGHT, TITLE);
 
-    IRun::Vk::Instance instance{ window };
-    IRun::Vk::Surface surface{ window, instance };
-    IRun::Vk::Device device{ instance, surface };
-    IRun::Vk::Swapchain swapchain{ false, window, surface, device };
-    IRun::Vk::RenderPass renderPass{ device, swapchain };
-    IRun::Vk::PipelineCache pipelineCache{};
-    std::string pipelineCachingOn = "with caching";
+    IRun::ECS::Helper helper{};
 
-    // For first run
-    err = pipelineCache.RetrieveCache("shaders/cache/PipelineCache.bin", device);
+    helper.index<IRun::ECS::VertexData, IRun::ECS::Shader>("VertexData", "Shader");
 
-    if ((int64_t)(err & IRun::ErrorCode::IoError) || (int64_t)(err & IRun::ErrorCode::Corrupt)) {
-        pipelineCache.CreateCache(device, nullptr, 0);
-        pipelineCachingOn = "without caching";
-    } 
+    IRun::Vk::Renderer renderer{ window, helper, true };
 
-    I_DEBUG_LOG_INFO("Creating pipelines %s!", pipelineCachingOn.c_str());
-
-    IRun::Vk::GraphicsPipeline graphicsPipeline{ "shaders/Vert.hlsl", "shaders/Frag.hlsl", IRun::ShaderLanguage::HLSL, device, swapchain, renderPass, nullptr, pipelineCache };
-
-
-    IRun::Vk::Framebuffers framebuffers{ swapchain, renderPass, device };
-    IRun::Vk::CommandPool commandPool{ device, device.GetQueueFamilies().graphicsFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT };
-    std::vector<IRun::Vk::CommandBuffer> commandBuffers{};
-    
-    for (int i = 0; i < framebuffers.Get().size(); i++) 
-        commandBuffers.emplace_back(commandPool.CreateBuffer(device, IRun::Vk::CommandBufferLevel::Primary));
-    
-    std::vector<IRun::Vk::Sync<IRun::Vk::Semaphore>> imageAvailableSemaphore{};
-    imageAvailableSemaphore.resize(MAX_FRAMES);
-    for (IRun::Vk::Sync<IRun::Vk::Semaphore>& semaphore : imageAvailableSemaphore) 
-        semaphore = IRun::Vk::Sync<IRun::Vk::Semaphore>{ device };
-
-    std::vector<IRun::Vk::Sync<IRun::Vk::Semaphore>> renderFinishedSemaphore{};
-    renderFinishedSemaphore.resize(MAX_FRAMES);
-    for (IRun::Vk::Sync<IRun::Vk::Semaphore>& semaphore : renderFinishedSemaphore) 
-        semaphore = IRun::Vk::Sync<IRun::Vk::Semaphore>{ device };
-
-    std::vector<IRun::Vk::Sync<IRun::Vk::Fence>> drawFences{};
-    drawFences.resize(MAX_FRAMES);
-    for (IRun::Vk::Sync<IRun::Vk::Fence>& fence : drawFences)
-        fence = IRun::Vk::Sync<IRun::Vk::Fence>{ device, VK_FENCE_CREATE_SIGNALED_BIT };
-    
-    std::array<IRun::Vertex, 3> vertices{
-        glm::vec3{  0.0f, -0.5f,  0.0f },
-        glm::vec3{  0.5f,  0.5f,  0.0f },
-        glm::vec3{ -0.5f,  0.5f,  0.0f },
+    std::vector<IRun::Vertex> vertexData = {
+        { {  0.0f, -0.5f,  0.0f } },
+        { {  0.5f,  0.5f,  0.0f } },
+        { { -0.5f,  0.5f,  0.0f } },
     };
 
-    IRun::Vk::Buffer<IRun::Vertex, vertices.size()> shape{ device, vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT };
+    IRun::ECS::Entity entity = helper.create<IRun::ECS::VertexData, IRun::ECS::Shader>(
+        {
+            vertexData
+        },
+        {
+            "shaders/vert.hlsl",
+            "shaders/frag.hlsl",
+            IRun::ShaderLanguage::HLSL
+        }
+    );
 
-    VkRenderPassBeginInfo renderPassBeginInfo{};
-    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassBeginInfo.renderPass = renderPass.Get();
-    renderPassBeginInfo.framebuffer = nullptr;
-    renderPassBeginInfo.renderArea.offset = { 0, 0 };
-    renderPassBeginInfo.renderArea.extent = swapchain.GetChosenSwapchainDetails().first;
-    VkClearValue clearColour{};
-    clearColour.color = { { 0.25f, 0.5f, 0.75f, 1.0f } };
-    renderPassBeginInfo.clearValueCount = 1;
-    renderPassBeginInfo.pClearValues = &clearColour;
+    renderer.AddEntity(entity);
 
-    uint32_t currentFrame = 0;
+    IWindow::Monitor primaryMonitor = window.GetPrimaryMonitor();
 
     while (window.IsRunning()) {
-        VkFence fencesToWaitFor[] = {
-            drawFences[currentFrame].Get()
-        };
+        renderer.ClearColor({ 100, 215, 156 });
+        renderer.Draw();
 
-        vkWaitForFences(device.Get().first, 1, fencesToWaitFor, true, UINT64_MAX);
-        vkResetFences(device.Get().first, 1, fencesToWaitFor);
-
-        uint32_t imageIndex;
-        vkAcquireNextImageKHR(device.Get().first, swapchain.Get(), UINT64_MAX, imageAvailableSemaphore[currentFrame].Get(), nullptr, &imageIndex);
-
-        renderPassBeginInfo.framebuffer = framebuffers[imageIndex];
-
-        commandPool.BeginRecordingCommands(device, commandBuffers[imageIndex]);
-
-            vkCmdBeginRenderPass(commandPool[commandBuffers[imageIndex]], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-                vkCmdBindPipeline(commandPool[commandBuffers[imageIndex]], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.Get());
-
-                VkViewport viewport{};
-                viewport.x = 0.0f;
-                viewport.y = 0.0f;
-                viewport.width = (float)swapchain.GetChosenSwapchainDetails().first.width;
-                viewport.height = (float)swapchain.GetChosenSwapchainDetails().first.height;
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 1.0f;
-
-                vkCmdSetViewport(commandPool[commandBuffers[imageIndex]], 0, 1, &viewport);
-
-                VkRect2D scissor{};
-                scissor.offset = { 0, 0 };
-                scissor.extent = { swapchain.GetChosenSwapchainDetails().first.width, swapchain.GetChosenSwapchainDetails().first.height };
-
-                vkCmdSetScissor(commandPool[commandBuffers[imageIndex]], 0, 1, &scissor);
-
-                VkBuffer buffers[] = {
-                    shape.Get()
-                };
-
-                VkDeviceSize offsets[] = {
-                    0
-                };
-
-                vkCmdBindVertexBuffers(commandPool[commandBuffers[imageIndex]], 0, 1, buffers, offsets);
-
-                vkCmdDraw(commandPool[commandBuffers[imageIndex]], (uint32_t)shape.GetSize(), 1, 0, 0);
-
-            vkCmdEndRenderPass(commandPool[commandBuffers[imageIndex]]);
-
-        commandPool.EndRecordingCommands(commandBuffers[imageIndex]);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.waitSemaphoreCount = 1;
-        VkSemaphore imageAvailableSemaphorePtr = imageAvailableSemaphore[currentFrame].Get();
-        submitInfo.pWaitSemaphores = &imageAvailableSemaphorePtr;
-        VkPipelineStageFlags waitStages[] = {
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-        };
-        // 1:1 with pWaitSemaphores
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
-        VkCommandBuffer commandBufferPtr = commandPool[commandBuffers[imageIndex]];
-        submitInfo.pCommandBuffers = &commandBufferPtr;
-        submitInfo.signalSemaphoreCount = 1;
-        VkSemaphore renderFinishedSemaphorePtr = imageAvailableSemaphore[currentFrame].Get();
-        submitInfo.pSignalSemaphores = &renderFinishedSemaphorePtr;
-
-        VK_CHECK(vkQueueSubmit(device.GetQueues().at(IRun::Vk::QueueType::Graphics), 1, &submitInfo, drawFences[currentFrame].Get()), "Failed to sumbit semaphore and command buffer info to graphics queue!");
-
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &renderFinishedSemaphorePtr;
-        presentInfo.swapchainCount = 1;
-        VkSwapchainKHR swapchainPtr = swapchain.Get();
-        presentInfo.pSwapchains = &swapchainPtr;
-        presentInfo.pImageIndices = &imageIndex;
-
-        VK_CHECK(vkQueuePresentKHR(device.GetQueues().at(IRun::Vk::QueueType::Presentation), &presentInfo), "Failed to present swapchain image");
-
-        currentFrame = (currentFrame + 1) % MAX_FRAMES;
+        if (window.IsKeyDown(IWindow::Key::F) && !window.IsFullscreen()) {
+            window.Fullscreen(true, primaryMonitor);
+        }
+        else if (window.IsKeyUp(IWindow::Key::F) && window.IsFullscreen()) {
+            window.Fullscreen(false, primaryMonitor);
+            window.SetWindowSize(WIDTH, HEIGHT);
+        }
 
         window.Update();
     }
 
-    // Wait until the device isn't doing anything
-    vkDeviceWaitIdle(device.Get().first);
-
-    pipelineCache.SaveCache("shaders/cache/PipelineCache.bin", device);
-
-    shape.Destroy(device);
-    for (IRun::Vk::Sync<IRun::Vk::Fence>& fence : drawFences)
-        fence.Destroy(device);
-    for (IRun::Vk::Sync<IRun::Vk::Semaphore>& semaphore : imageAvailableSemaphore) 
-        semaphore.Destroy(device);
-    for (IRun::Vk::Sync<IRun::Vk::Semaphore>& semaphore : renderFinishedSemaphore) 
-        semaphore.Destroy(device);
-    commandPool.Destroy(device);
-    framebuffers.Destroy(device);
-    graphicsPipeline.Destroy(device);
-    pipelineCache.Destroy(device);
-    renderPass.Destroy(device);
-    swapchain.Destroy(device);
-    device.Destroy();
-    surface.Destroy(instance);
-    instance.Destroy();
+    renderer.Destroy();
 
     return EXIT_SUCCESS;
 }
 
-#include <ecs\Components.h>
 
 int TestECS() {
     IRun::ECS::Helper helper{};
 
     helper.index<IRun::ECS::VertexData, IRun::ECS::Shader>("VertexData", "Shader");
 
-    std::vector<float> vertexData = {
-        1.0f, 0.0f,  1.0f,
-        0.5f, 0.14f, 0.12532523f
+    std::vector<IRun::Vertex> vertexData = {
+        IRun::Vertex{ { 1.0f, 0.0f,  1.0f } },
+        IRun::Vertex{ { 0.5f, 0.14f, 0.12532523f } },
     };
 
     IRun::ECS::Entity entity = helper.create<IRun::ECS::VertexData, IRun::ECS::Shader>(
@@ -323,6 +185,7 @@ int TestECS() {
         {
             "vert/file/name.hlsl",
             "frag/file/name.hlsl",
+            IRun::ShaderLanguage::HLSL
         }
     );
 
@@ -335,25 +198,6 @@ int TestECS() {
     return EXIT_SUCCESS;
 }
 
-#include <renderer\vulkan\Renderer.h>
-
-int TestRendererVk() {
-    IWindow::Window window{};
-
-    window.Create(800, 600, "Hello IRun!");
-
-    IRun::Vk::Renderer renderer{ window, true };
-
-    while (window.IsRunning()) {
-
-        window.Update();
-    }
-
-    renderer.Destroy();
-
-    return EXIT_SUCCESS;
-}
-
 int main() {
-    return TestVK();
+    return TestRendererVk();
 }

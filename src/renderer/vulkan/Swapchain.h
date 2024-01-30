@@ -15,12 +15,13 @@ namespace IRun {
 			/// </summary>
 			/// <param name="surface">Surface to be presented to.</param>
 			/// <param name="device">Device that will render the swapchain images.</param>
-			Swapchain(bool vSync, IWindow::Window& window, const Surface& surface, const Device& device);
+			Swapchain(bool vSync, IWindow::Window& window, const Surface& surface, const Device& device, Swapchain* oldSwapchain);
 			/// <summary>
 			/// Destroys the swapchain, images, and image views.
 			/// </summary>
-			/// <param name="device"></param>
-			void Destroy(const Device& device);
+			/// <param name="device">A valid IRun::Vk::Device</param>
+			/// <param name="isOldSwapchain">If this swapchain was passed into another constructor of in param Swapchain* oldSwapchain then this should be true.</param>
+			void Destroy(const Device& device, bool isOldSwapchain);
 			/// <summary>
 			/// Get the native swapchain handle.
 			/// </summary>
@@ -36,10 +37,6 @@ namespace IRun {
 			/// </summary>
 			/// <returns>Images and image views associated with this swapchain</returns>
 			const inline std::vector<SwapchainImage>& GetSwapchainImages() const { return m_images; }
-			// Delete copy constructor because VkSwapchainKHR could be deleted by another copy.
-			Swapchain(const Swapchain&) = delete;
-			// Delete copy constructor because VkSwapchainKHR could be deleted by another copy.
-			Swapchain& operator=(const Swapchain&) = delete;
 		private:
 			VkSwapchainKHR m_swapchain;
 

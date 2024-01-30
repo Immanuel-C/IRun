@@ -7,7 +7,7 @@
 #include "tools\File.h"
 #include "tools\dxc\HLSLCompiler.h"
 #include "../ShaderLang.h"
-#include "Vertex.h"
+#include "../Vertex.h"
 
 #include <string>
 
@@ -20,6 +20,7 @@ namespace IRun {
 		/// </summary>
 		class GraphicsPipeline {
 		public:
+			GraphicsPipeline() = default;
 			/// <summary>
 			/// Creates a graphics pipeline.
 			/// </summary>

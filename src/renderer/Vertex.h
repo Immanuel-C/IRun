@@ -2,8 +2,10 @@
 
 #include <glm/glm.hpp>
 
+#include "math/Vector.h"
+
 namespace IRun {
 	struct Vertex {
-		glm::vec3 position;
+		Math::Vector3 position;
 	};
 }

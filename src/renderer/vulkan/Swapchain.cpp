@@ -2,7 +2,7 @@
 
 namespace IRun {
 	namespace Vk {
-		Swapchain::Swapchain(bool vSync, IWindow::Window& window, const Surface& surface, const Device& device) {
+		Swapchain::Swapchain(bool vSync, IWindow::Window& window, const Surface& surface, const Device& device, Swapchain* oldSwapchain) {
 			m_surfaceFormat = ChooseBestSurfaceFormat(device);
 			VkPresentModeKHR presentMode = ChooseBestPresentationMode(vSync, device);
 			m_imageExtent = ChooseSwapchainImageResolution(window, device);
@@ -28,7 +28,7 @@ namespace IRun {
 			// Blending of two windows overlapping.
 			// We want no blending.
 			swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-			swapchainCreateInfo.clipped = VK_TRUE;
+			swapchainCreateInfo.clipped = true;
 
 			QueueFamilyIndices queueFamilyIndices = device.GetQueueFamilies();
 
@@ -48,7 +48,12 @@ namespace IRun {
 				swapchainCreateInfo.pQueueFamilyIndices = nullptr;
 			}
 
-			swapchainCreateInfo.oldSwapchain = nullptr;
+			VkSwapchainKHR old = nullptr;
+
+			if (oldSwapchain != nullptr) 
+				old = oldSwapchain->Get();
+
+			swapchainCreateInfo.oldSwapchain = old;
 
 			VK_CHECK(vkCreateSwapchainKHR(device.Get().first, &swapchainCreateInfo, nullptr, &m_swapchain), "Failed to create Vulkan swapchain! Abort!");
 
@@ -72,10 +77,11 @@ namespace IRun {
 			}
 		}
 
-		void Swapchain::Destroy(const Device& device) { 
+		void Swapchain::Destroy(const Device& device, bool isOldSwapchain) {
 			for (const SwapchainImage& image : m_images)
 				vkDestroyImageView(device.Get().first, image.view, nullptr);
-			vkDestroySwapchainKHR(device.Get().first, m_swapchain, nullptr); 
+			if (!isOldSwapchain)
+				vkDestroySwapchainKHR(device.Get().first, m_swapchain, nullptr); 
 		}
 
 		// Best format is subjective, IRun will use:
@@ -101,8 +107,8 @@ namespace IRun {
 
 			for (const VkPresentModeKHR& presentMode : presentModes)
 			{
-				if (vSync && presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-					return presentMode;
+				if (vSync && presentMode == VK_PRESENT_MODE_FIFO_KHR)
+					return VK_PRESENT_MODE_FIFO_KHR;
 				else if (!vSync && presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
 					return presentMode;
 			}

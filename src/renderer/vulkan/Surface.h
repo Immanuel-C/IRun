@@ -28,10 +28,6 @@ namespace IRun {
 			/// </summary>
 			/// <returns>native Vulkan surface.</returns>
 			VkSurfaceKHR Get() const { return m_surface; }
-			// Delete copy constructor because VkDevice could be deleted by another copy.
-			Surface(const Surface&) = delete;
-			// Delete copy constructor because VkDevice could be deleted by another copy.
-			const Surface& operator=(const Surface&) = delete;
 		private:
 			VkSurfaceKHR m_surface = nullptr;
 		};

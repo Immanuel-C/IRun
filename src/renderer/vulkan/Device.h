@@ -56,14 +56,13 @@ namespace IRun {
 			/// </summary>
 			/// <returns>swapchain details</returns>
 			const inline SwapchainDetails& GetSwapchainDetails() const { return m_swapchainDetails; }
+
+			const inline void ResetSwapchainDetails(Surface& surface) { m_swapchainDetails = FindSwapchainDetails(m_physicalDevice, surface); }
+
 			/// <summary>
 			/// Get the physical device properties.
 			/// </summary>
 			const inline VkPhysicalDeviceProperties& GetDeviceProperties() const { return m_deviceProperties; }
-			// Delete copy constructor because VkDevice could be deleted by another copy.
-			Device(const Device&) = delete;
-			// Delete copy constructor because VkDevice could be deleted by another copy.
-			const Device& operator=(const Device&) = delete;
 		private:
 			VkPhysicalDevice m_physicalDevice = nullptr;
 			VkDevice m_device;

@@ -81,13 +81,14 @@ namespace IRun {
 			/// </returns>
 			ErrorCode SaveCache(const std::string& filename, Device& device);
 			/// <summary>
-			/// Saves the cache to a file. The file with should be in IRun pipeline cache format and will automatically convert the format to the appropriate Vulkan format and create a VkPipelineCache using that data.
+			/// Saves the cache to a file. The file with should be in IRun pipeline cache format and will automatically convert the format to the appropriate Vulkan format and create a VkPipelineCache using that data. If this method succeeds then it will create the VkPipelineCache.
 			/// </summary>
 			/// <param name="filename">file to get the cache data from.</param>
 			/// <param name="device">A valid IRun::Vk::Device.</param>
 			/// <returns>
 			/// Returns IRun::ErrorCode::Success if the function succeeds.
 			/// Returns IRun::ErrorCode::IoError if file failed to open.
+			/// Returns IRun::ErrorCode::Corrupt if the file contains corrupted data.
 			/// </returns>
 			ErrorCode RetrieveCache(const std::string& filename, Device& device);
 			/// <summary>

@@ -26,10 +26,6 @@ namespace IRun {
 			/// </summary>
 			/// <returns>native Vulkan instance.</returns>
 			inline VkInstance Get() const { return m_instance; }
-			// Delete copy constructor because VkInstance and VkDebugUtilsMessengerEXT could be deleted by another copy.
-			Instance(const Instance&) = delete;
-			// Delete operator=(const Instance&) because VkInstance and VkDebugUtilsMessengerEXT could be deleted by another copy.
-			Instance& operator=(const Instance&) = delete;
 		private:
 			VkInstance m_instance;
 			VkDebugUtilsMessengerEXT m_debugMessenger;
@@ -37,7 +33,7 @@ namespace IRun {
 			void CreateInstance(IWindow::Window& window);
 			void CreateDebugMessenger();
 
-			const std::vector<const char*> m_validationLayers = {
+			std::vector<const char*> m_validationLayers = {
 				"VK_LAYER_KHRONOS_validation"
 			};
 

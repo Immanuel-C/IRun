@@ -18,7 +18,7 @@ namespace IRun {
 				fragShaderModule = CreateShaderModules((const uint32_t*)shaderBin[1].data(), shaderBin[1].size(), device);
 				break;
 			}
-			case IRun::ShaderLanguage::Spriv: {
+			case IRun::ShaderLanguage::Spirv: {
 				std::string vertShaderCode = Tools::ReadFile(vertShaderFilename, Tools::IoFlags::Binary);
 				std::string fragShaderCode = Tools::ReadFile(fragShaderFilename, Tools::IoFlags::Binary);
 				vertShaderModule = CreateShaderModules((uint32_t*)vertShaderCode.c_str(), vertShaderCode.size(), device);
@@ -193,17 +193,18 @@ namespace IRun {
 			// Index defined in VkRenderPassCreateInfo::pSubpasses
 			graphicsPipelineCreateInfo.subpass = 0;
 
-			// Base this pipline off another one
-			graphicsPipelineCreateInfo.basePipelineHandle = nullptr;
-			// Base this pipeline off of another pipeline in an array of pipeline create infos (not used since we only have one pipline)
-			graphicsPipelineCreateInfo.basePipelineIndex = -1;
+			VkPipeline base = nullptr;
 
-			IRun::Tools::Timer<IRun::Tools::Milliseconds> timer{};
-			timer.Start();
+			if (basePipeline != nullptr)
+				base = basePipeline->Get();
+
+			// Base this pipline off another one
+			graphicsPipelineCreateInfo.basePipelineHandle = base;
+			// Base this pipeline off of another pipeline in an array of pipeline create infos (not used since we only have one pipline)
+			graphicsPipelineCreateInfo.basePipelineIndex = 0;
+
 			VK_CHECK(vkCreateGraphicsPipelines(device.Get().first, pipelineCache.Get().second, 1, &graphicsPipelineCreateInfo, nullptr, &m_graphicsPipeline), "Failed to create graphics pipeline!");
-			double timeToCreateGraphicsPipeline = timer.Stop();
 			I_DEBUG_LOG_TRACE("Created Vulkan graphics pipeline: 0x%p", m_graphicsPipeline);
-			I_DEBUG_LOG_INFO("Time took to create graphics pipeline: %fms", timeToCreateGraphicsPipeline);
 
 
 			I_DEBUG_LOG_TRACE("Destroyed Vulkan shader module: 0x%p", vertShaderModule);
