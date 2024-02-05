@@ -17,8 +17,8 @@ namespace IRun {
 		void CommandPool::Destroy(const Device& device) {
 			I_DEBUG_LOG_TRACE("Destroyed Vulkan command pool: 0x%p", m_commandPool);
 			vkDestroyCommandPool(device.Get().first, m_commandPool, nullptr);
-			for (VkCommandBuffer buffer : m_commandBuffers) {
-				I_DEBUG_LOG_TRACE("Destroyed Vulkan command buffer: 0x%p", buffer);
+			for (const std::pair<CommandBuffer, VkCommandBuffer>& buffer : m_commandBuffers) {
+				I_DEBUG_LOG_TRACE("Destroyed Vulkan command buffer: 0x%p", buffer.second);
 			}
 		}
 
@@ -33,20 +33,29 @@ namespace IRun {
 
 			VK_CHECK(vkAllocateCommandBuffers(device.Get().first, &allocInfo, &commandBuffer), "Failed to create Vulkan command buffer");
 
-			m_commandBuffers.push_back(commandBuffer);
+			CommandBuffer commandBufferIndex = m_commandBuffers.size();
 
-			I_DEBUG_LOG_TRACE("Create Vulkan command buffer: 0x%p", m_commandBuffers[m_commandBuffers.size() - 1]);
+			m_commandBuffers.insert({ commandBufferIndex, commandBuffer });
 
-			return m_commandBuffers.size() - 1;
+			I_DEBUG_LOG_TRACE("Create Vulkan command buffer: 0x%p", m_commandBuffers.at(commandBufferIndex));
+
+			return commandBufferIndex;
 		}
 
-		void CommandPool::BeginRecordingCommands(const Device& device, CommandBuffer commandBuffer) {
+		void CommandPool::BeginRecordingCommands(const Device& device, CommandBuffer commandBuffer, VkCommandBufferUsageFlags usageFlags) {
 			VkCommandBufferBeginInfo beginInfo{};
 			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			VK_CHECK(vkBeginCommandBuffer(m_commandBuffers[commandBuffer], &beginInfo), "Failed to begin Vulkan command buffer");
+			beginInfo.flags = usageFlags;
+
+			VK_CHECK(vkBeginCommandBuffer(m_commandBuffers.at(commandBuffer), &beginInfo), "Failed to begin Vulkan command buffer");
 		}
 		void CommandPool::EndRecordingCommands(CommandBuffer commandBuffer) {
-			VK_CHECK(vkEndCommandBuffer(m_commandBuffers[commandBuffer]), "Failed to end Vulkan command buffer");
+			VK_CHECK(vkEndCommandBuffer(m_commandBuffers.at(commandBuffer)), "Failed to end Vulkan command buffer");
+		}
+
+		void CommandPool::DestroyCommandBuffer(Device& device, CommandBuffer commandBuffer) {
+			vkFreeCommandBuffers(device.Get().first, m_commandPool, 1, &m_commandBuffers.at(commandBuffer));
+			m_commandBuffers.erase(commandBuffer);
 		}
 	}
 }

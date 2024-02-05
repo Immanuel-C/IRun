@@ -56,10 +56,11 @@ int TestGL() {
     shaderProgram.Bind();
 
     float vertices[] = {
-        0.5f,  0.5f, 0.0f,  // top right
-        0.5f, -0.5f, 0.0f,  // bottom right
-       -0.5f, -0.5f, 0.0f,  // bottom left
-       -0.5f,  0.5f, 0.0f   // top left 
+        // Position             Uv
+        0.5f,  0.5f, 0.0f,      1.0f, 1.0f, // top right
+        0.5f, -0.5f, 0.0f,      1.0f, 0.0f, // bottom right
+       -0.5f, -0.5f, 0.0f,      0.0f, 0.0f, // bottom left
+       -0.5f,  0.5f, 0.0f,      0.0f, 1.0f, // top left 
     };
     uint32_t indices[] = {  // note that we start from 0!
         0, 1, 3,  // first Triangle
@@ -122,19 +123,28 @@ int TestRendererVk() {
 
     IRun::ECS::Helper helper{};
 
-    helper.index<IRun::ECS::VertexData, IRun::ECS::Shader>("VertexData", "Shader");
+    helper.index<IRun::ECS::VertexData, IRun::ECS::IndexData, IRun::ECS::Shader>("VertexData", "IndexData", "Shader");
 
     IRun::Vk::Renderer renderer{ window, helper, true };
 
     std::vector<IRun::Vertex> vertexData = {
-        { {  0.0f, -0.5f,  0.0f } },
-        { {  0.5f,  0.5f,  0.0f } },
-        { { -0.5f,  0.5f,  0.0f } },
+        { { -0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f } },  // Top Left:     0
+        { {  0.5f, -0.5f,  0.0f }, { 1.0f, 1.0f } },  // Top Right:    1
+        { {  0.5f,  0.5f,  0.0f }, { 1.0f, 0.0f } },  // Bottom Right: 2
+        { { -0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f } },  // Bottom Left:  3
     };
 
-    IRun::ECS::Entity entity = helper.create<IRun::ECS::VertexData, IRun::ECS::Shader>(
+    std::vector<uint32_t> indexData = {
+        0, 1, 2, // Top Left
+        2, 3, 0  // Bottom Right
+    };
+
+    IRun::ECS::Entity entity = helper.create<IRun::ECS::VertexData, IRun::ECS::IndexData, IRun::ECS::Shader>(
         {
             vertexData
+        },
+        {
+            indexData
         },
         {
             "shaders/vert.hlsl",
@@ -199,5 +209,5 @@ int TestECS() {
 }
 
 int main() {
-    return TestRendererVk();
+    return TestGL();
 }

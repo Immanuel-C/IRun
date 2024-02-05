@@ -38,10 +38,11 @@ namespace IRun {
 			};
 			
 			m_framebuffers = Framebuffers{ m_swapchain, m_renderPass, m_device };
-			m_commandPool = CommandPool{ m_device, m_device.GetQueueFamilies().graphicsFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT };
+			m_graphicsCommandPool = CommandPool{ m_device, m_device.GetQueueFamilies().graphicsFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT };
+			m_transferCommandPool = CommandPool{ m_device, m_device.GetQueueFamilies().transferFamily };
 
 			for (int i = 0; i < m_framebuffers.Get().size(); i++)
-				m_commandBuffers.emplace_back(m_commandPool.CreateBuffer(m_device, IRun::Vk::CommandBufferLevel::Primary));
+				m_commandBuffers.emplace_back(m_graphicsCommandPool.CreateBuffer(m_device, IRun::Vk::CommandBufferLevel::Primary));
 
 			m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 			for (Sync<Semaphore>& semaphore : m_imageAvailableSemaphores)
@@ -74,19 +75,28 @@ namespace IRun {
 
 			m_entities.insert({ entity, entity });
 
-			auto [vertexData, shaders] = m_helper.get<ECS::VertexData, ECS::Shader>(entity);
+			auto [vertexData, indexData, shaders] = m_helper.get<ECS::VertexData, ECS::IndexData, ECS::Shader>(entity);
 
-			Buffer<Vertex> vertexDataBuffer { 
-				m_device, 
-				vertexData.data.data(), 
-				vertexData.data.size(), 
-				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-				VK_SHARING_MODE_EXCLUSIVE, 
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT 
+			DeviceLocalBuffer<Vertex> vertexDataBuffer{
+				m_device,
+				m_transferCommandPool,
+				vertexData.data.data(),
+				vertexData.data.size(),
+				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			};
 
 			m_vertexDataBuffers.insert({ entity, vertexDataBuffer });
 			
+			DeviceLocalBuffer<uint32_t> indexDataBuffer {
+				m_device,
+				m_transferCommandPool,
+				indexData.data.data(),
+				indexData.data.size(),
+				VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			};
+
+			m_indexDataBuffers.insert({ entity, indexDataBuffer });
+
 			if (m_graphicsPipelines.count(shaders) > 0) { 
 				if (debugMode) {
 					double time = timer.Stop();
@@ -119,9 +129,13 @@ namespace IRun {
 
 			auto [shaders] = m_helper.get<ECS::Shader>(entity);
 
-			Buffer<Vertex>& vertexDataBuffer = m_vertexDataBuffers.at(entity);
+			DeviceLocalBuffer<Vertex>& vertexDataBuffer = m_vertexDataBuffers.at(entity);
 			vertexDataBuffer.Destroy(m_device);
 			m_vertexDataBuffers.erase(entity);
+
+			DeviceLocalBuffer<uint32_t>& indexDataBuffer = m_indexDataBuffers.at(entity);
+			indexDataBuffer.Destroy(m_device);
+			m_indexDataBuffers.erase(entity);
 
 			if (m_graphicsPipelines.count(shaders) == 1) {
 				GraphicsPipeline& graphicsPipeline = m_graphicsPipelines.at(shaders);
@@ -160,7 +174,7 @@ namespace IRun {
 					m_drawFences[m_currentFrame].Get()
 				};
 
-				vkWaitForFences(m_device.Get().first, fencesToWaitFor.size(), fencesToWaitFor.data(), true, UINT64_MAX);
+				vkWaitForFences(m_device.Get().first, (uint32_t)fencesToWaitFor.size(), fencesToWaitFor.data(), true, UINT64_MAX);
 
 				uint32_t imageIndex;
 				VkResult res = vkAcquireNextImageKHR(m_device.Get().first, m_swapchain.Get(), UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame].Get(), nullptr, &imageIndex);
@@ -175,18 +189,18 @@ namespace IRun {
 				}
 					
 
-				vkResetFences(m_device.Get().first, fencesToWaitFor.size(), fencesToWaitFor.data());
+				vkResetFences(m_device.Get().first, (uint32_t)fencesToWaitFor.size(), fencesToWaitFor.data());
 
 				m_renderPassBeginInfo.renderPass = m_renderPass.Get();
 				m_renderPassBeginInfo.renderArea.offset = { 0, 0 };
 				m_renderPassBeginInfo.renderArea.extent = m_swapchain.GetChosenSwapchainDetails().first;
 				m_renderPassBeginInfo.framebuffer = m_framebuffers[imageIndex];
 
-				m_commandPool.BeginRecordingCommands(m_device, m_commandBuffers[imageIndex]);
+				m_graphicsCommandPool.BeginRecordingCommands(m_device, m_commandBuffers[imageIndex]);
 
-					vkCmdBeginRenderPass(m_commandPool[m_commandBuffers[imageIndex]], &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+					vkCmdBeginRenderPass(m_graphicsCommandPool[m_commandBuffers[imageIndex]], &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-						vkCmdBindPipeline(m_commandPool[m_commandBuffers[imageIndex]], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelines.at(shaders).Get());
+						vkCmdBindPipeline(m_graphicsCommandPool[m_commandBuffers[imageIndex]], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelines.at(shaders).Get());
 
 						VkViewport viewport{};
 						viewport.x = 0.0f;
@@ -196,31 +210,34 @@ namespace IRun {
 						viewport.minDepth = 0.0f;
 						viewport.maxDepth = 1.0f;
 
-						vkCmdSetViewport(m_commandPool[m_commandBuffers[imageIndex]], 0, 1, &viewport);
+						vkCmdSetViewport(m_graphicsCommandPool[m_commandBuffers[imageIndex]], 0, 1, &viewport);
 
 						VkRect2D scissor{};
 						scissor.offset = { 0, 0 };
 						scissor.extent = { m_swapchain.GetChosenSwapchainDetails().first.width, m_swapchain.GetChosenSwapchainDetails().first.height };
 
-						vkCmdSetScissor(m_commandPool[m_commandBuffers[imageIndex]], 0, 1, &scissor);
+						vkCmdSetScissor(m_graphicsCommandPool[m_commandBuffers[imageIndex]], 0, 1, &scissor);
 
-						Buffer<Vertex> vertexDataBuffer = m_vertexDataBuffers.at(entity);
+						DeviceLocalBuffer<Vertex> vertexDataBuffer = m_vertexDataBuffers.at(entity);
+						DeviceLocalBuffer<uint32_t> indexDataBuffer = m_indexDataBuffers.at(entity);
 
-						VkBuffer buffers[] = {
-							vertexDataBuffer.Get()
+						std::array<VkBuffer, 1> vertexBuffers = {
+							vertexDataBuffer.Get().Get(),
 						};
 
-						VkDeviceSize offsets[] = {
+						std::array<VkDeviceSize, 1> offsets = {
 							0
 						};
 
-						vkCmdBindVertexBuffers(m_commandPool[m_commandBuffers[imageIndex]], 0, 1, buffers, offsets);
+						vkCmdBindVertexBuffers(m_graphicsCommandPool[m_commandBuffers[imageIndex]], 0, (uint32_t)vertexBuffers.size(), vertexBuffers.data(), offsets.data());
 
-						vkCmdDraw(m_commandPool[m_commandBuffers[imageIndex]], (uint32_t)vertexDataBuffer.GetSize(), 1, 0, 0);
+						vkCmdBindIndexBuffer(m_graphicsCommandPool[m_commandBuffers[imageIndex]], indexDataBuffer.Get().Get(), 0, VK_INDEX_TYPE_UINT32);
 
-					vkCmdEndRenderPass(m_commandPool[m_commandBuffers[imageIndex]]);
+						vkCmdDrawIndexed(m_graphicsCommandPool[m_commandBuffers[imageIndex]], (uint32_t)indexDataBuffer.Get().GetSize(), 1, 0, 0, 0);
 
-				m_commandPool.EndRecordingCommands(m_commandBuffers[imageIndex]);
+					vkCmdEndRenderPass(m_graphicsCommandPool[m_commandBuffers[imageIndex]]);
+
+				m_graphicsCommandPool.EndRecordingCommands(m_commandBuffers[imageIndex]);
 
 				VkSubmitInfo submitInfo{};
 				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -239,7 +256,7 @@ namespace IRun {
 				submitInfo.pWaitDstStageMask = waitStages;
 
 				std::array<VkCommandBuffer, 1> submitCommandBuffers = { 
-					m_commandPool[m_commandBuffers[imageIndex]] 
+					m_graphicsCommandPool[m_commandBuffers[imageIndex]] 
 				};
 
 				submitInfo.commandBufferCount = (uint32_t)submitCommandBuffers.size();
@@ -290,6 +307,9 @@ namespace IRun {
 			for (auto& [entity, vertexBuffer] : m_vertexDataBuffers)
 				vertexBuffer.Destroy(m_device);
 
+			for (auto& [entity, indexBuffer] : m_indexDataBuffers)
+				indexBuffer.Destroy(m_device);
+
 			for (Sync<Semaphore>& semaphore : m_imageAvailableSemaphores)
 				semaphore.Destroy(m_device);
 
@@ -299,7 +319,8 @@ namespace IRun {
 			for (Sync<Fence>& fence : m_drawFences)
 				fence.Destroy(m_device);
 
-			m_commandPool.Destroy(m_device);
+			m_transferCommandPool.Destroy(m_device);
+			m_graphicsCommandPool.Destroy(m_device);
 			m_framebuffers.Destroy(m_device);
 
 			for (auto& [shader, graphicsPipeline]: m_graphicsPipelines) 

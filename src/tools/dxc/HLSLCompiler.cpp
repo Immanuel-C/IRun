@@ -48,7 +48,9 @@ namespace IRun {
 					// Target profile
 					L"-T", L"vs_6_1",
 					// Compile to SPRIV
-					L"-spirv"
+					L"-spirv", 
+					// Preprocessor so that the hlsl files know if we are compiling for Vulkan/GL or DirectX
+					L"-D",  L"KHR", 
 				};
 
 				LPCWSTR fragArgs[] = {
@@ -57,7 +59,9 @@ namespace IRun {
 					// Target profile
 					L"-T", L"ps_6_1",
 					// Compile to SPRIV
-					L"-spirv"
+					L"-spirv",
+					// Preprocessor so that the hlsl files know if we are compiling for Vulkan/GL or DirectX
+					L"-D",  L"KHR",
 				};
 
 				DxcBuffer vertBuf{};

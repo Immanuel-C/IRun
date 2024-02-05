@@ -55,7 +55,7 @@ namespace IRun {
 			// For instancing. How to move between data after each vertex.
 			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-			std::array<VkVertexInputAttributeDescription, 1> attributeDescriptions{};
+			std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
 
 			// position attribute
 			// Binds this attribute to VkVertexInputBindingDescription::binding = 0
@@ -65,7 +65,18 @@ namespace IRun {
 			// Size and type of data 32 bit float
 			attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 			// Location of attribute in each stride
-			attributeDescriptions[0].offset = 0;
+			attributeDescriptions[0].offset = offsetof(Vertex, position);
+
+			// uv attribute
+			// Binds this attribute to VkVertexInputBindingDescription::binding = 0
+			attributeDescriptions[1].binding = 0;
+			// location in shader.
+			attributeDescriptions[1].location = 1;
+			// Size and type of data 32 bit float
+			attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+			// Location of attribute in each stride
+			attributeDescriptions[1].offset = offsetof(Vertex, uv);
+
 
 			VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
 			vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

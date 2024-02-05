@@ -46,25 +46,28 @@ namespace IRun {
 			/// </summary>
 			/// <param name="device">A valid IRun::Vk::Device.</param>
 			/// <param name="commandBuffer">The command buffer to record to.</param>
-			void BeginRecordingCommands(const Device& device, CommandBuffer commandBuffer);
+			/// <param name="usageFlags">A VkCommandBufferUsageFlags that will be passed into VkCommandBufferBeginInfo::flags.</param>
+			void BeginRecordingCommands(const Device& device, CommandBuffer commandBuffer, VkCommandBufferUsageFlags usageFlags = 0);
 			/// <summary>
 			/// End recording commands to a command buffer.
 			/// </summary>
 			/// <param name="commandBuffer">The command buffer to stop recording commands to.</param>
 			void EndRecordingCommands(CommandBuffer commandBuffer);
-
-			VkCommandBuffer operator[](CommandBuffer commandBuffer) {
-				return m_commandBuffers[(uint64_t)commandBuffer];
-			}
+			/// <summary>
+			/// Destroy a specific command buffer. 
+			/// </summary>
+			/// <param name="commandBuffer">Command buffer to be destroyed.</param>
+			void DestroyCommandBuffer(Device& device, CommandBuffer commandBuffer);
+			inline VkCommandBuffer operator[](CommandBuffer commandBuffer) { return m_commandBuffers.at(commandBuffer); }
 			/// <summary>
 			/// Get the VkCommandBufferHandle.
 			/// </summary>
 			/// <param name="commandBuffer">Index of command buffer to retrieve.</param>
 			/// <returns>Handle to VkCommandBuffer.</returns>
-			inline const VkCommandBuffer Get(CommandBuffer commandBuffer) { return m_commandBuffers[commandBuffer]; }
+			inline const VkCommandBuffer Get(CommandBuffer commandBuffer) { return m_commandBuffers.at(commandBuffer); }
 		private:
 			VkCommandPool m_commandPool;
-			std::vector<VkCommandBuffer> m_commandBuffers;
+			std::unordered_map<CommandBuffer, VkCommandBuffer> m_commandBuffers;
 		};
 	}
 }

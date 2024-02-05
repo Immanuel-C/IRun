@@ -55,6 +55,34 @@ namespace IRun {
 			}
 		};
 
+		struct IndexData {
+			std::vector<uint32_t> data;
+
+			inline std::string ToString() const {
+				std::string finalString;
+
+				for (uint32_t val: data) {
+					finalString += std::to_string(val) + " ";
+				}
+
+				return finalString;
+			}
+
+			inline void FromString(const std::string& values) {
+				size_t offset = values.find_last_of(" ");
+
+				if (offset == std::string::npos) {
+					I_LOG_ERROR("Failed to de-serialize values of VertexData!");
+					return;
+				}
+
+				std::istringstream dataSS{ values.substr(0, offset) };
+
+				std::copy(std::istream_iterator<uint32_t>(dataSS), std::istream_iterator<uint32_t>(), std::back_inserter(data));
+			}
+		};
+
+
 		struct Shader {
 			std::string vertexFilename, fragmentFilename;
 			ShaderLanguage language;

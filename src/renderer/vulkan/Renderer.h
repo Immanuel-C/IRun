@@ -11,7 +11,7 @@
 #include "Framebuffers.h"
 #include "CommandPool.h"
 #include "Sync.h"
-#include "Buffer.h"
+#include "DeviceLocalBuffer.h"
 
 #include "ecs/Components.h"
 
@@ -72,7 +72,8 @@ namespace IRun {
 			RenderPass m_renderPass;
 			PipelineCache m_pipelineCache;
 			Framebuffers m_framebuffers;
-			CommandPool m_commandPool;
+			CommandPool m_graphicsCommandPool;
+			CommandPool m_transferCommandPool;
 			GraphicsPipeline m_basePipeline;
 
 			std::vector<Sync<Semaphore>> m_imageAvailableSemaphores{};
@@ -82,7 +83,8 @@ namespace IRun {
 			std::vector<CommandBuffer> m_commandBuffers;
 
 			std::unordered_map<ECS::Shader, GraphicsPipeline, ECS::Shader::HashFn> m_graphicsPipelines;
-			std::unordered_map<ECS::Entity, Buffer<Vertex>> m_vertexDataBuffers;
+			std::unordered_map<ECS::Entity, DeviceLocalBuffer<Vertex>> m_vertexDataBuffers;
+			std::unordered_map<ECS::Entity, DeviceLocalBuffer<uint32_t>> m_indexDataBuffers;
 
 			VkRenderPassBeginInfo m_renderPassBeginInfo{};
 

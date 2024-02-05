@@ -2,6 +2,7 @@
 
 #include <array>
 #include <glad\glad.h>
+#include "../Vertex.h"
 
 namespace IRun {
 	namespace GL {

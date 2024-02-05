@@ -4,9 +4,23 @@
 
 #include "../Vertex.h"
 #include "Device.h"
+#include "tools/Flags.h"
 
 namespace IRun {
 	namespace Vk {
+		/// <summary>
+		/// IRun specific flags for creating buffers on the Gpu.
+		/// </summary>
+		enum struct BufferFlags {
+			None = 0x0,
+			/// <summary>
+			/// Do not map the host visible data to the gpu.
+			/// </summary>
+			NoMap = 0x1,
+			Max
+		};
+		CREATE_FLAGS_FROM_ENUM_STRUCT(BufferFlags, BufferFlags::Max);
+
 		/// <summary>
 		/// Wrapper for a VkBuffer. This data is stored on the Gpu.
 		/// </summary>
@@ -25,7 +39,7 @@ namespace IRun {
 			/// <param name="usageFlags">Usage of the buffer. Must be a valid VkBufferUsageFlags.</param>
 			/// <param name="sharingMode">Allow sharing between queue families. Must be a valid VkSharingMode.</param>
 			/// <param name="propertyFlags">Properties of the buffers. Must be a valid VkMemoryPropertyFlags.</param>
-			Buffer(Device& device, DataType* data, size_t dataSize, VkBufferUsageFlags usageFlags, VkSharingMode sharingMode, VkMemoryPropertyFlags propertyFlags) :
+			Buffer(Device& device, DataType* data, size_t dataSize, VkBufferUsageFlags usageFlags, VkSharingMode sharingMode, VkMemoryPropertyFlags propertyFlags, BufferFlags flags = BufferFlags::None) :
 				m_size{ dataSize }
 			{
 				VkBufferCreateInfo createInfo{};
@@ -52,11 +66,13 @@ namespace IRun {
 				// memoryOffset is for memory pools. I should add that.
 				vkBindBufferMemory(device.Get().first, m_buffer, m_memory, 0);
 
-				void* mappedData;
-				// VkMemoryMapFlags is reserved should always be zero.
-				vkMapMemory(device.Get().first, m_memory, 0, createInfo.size, 0, &mappedData);
-				memcpy(mappedData, data, (size_t)createInfo.size);
-				vkUnmapMemory(device.Get().first, m_memory);
+				if (!(int64_t)(flags & BufferFlags::NoMap)) {
+					void* mappedData;
+					// VkMemoryMapFlags is reserved should always be zero.
+					vkMapMemory(device.Get().first, m_memory, 0, createInfo.size, 0, &mappedData);
+					memcpy(mappedData, data, (size_t)createInfo.size);
+					vkUnmapMemory(device.Get().first, m_memory);
+				}
 			}
 			/// <summary>
 			/// Destroy the VkBuffer and free the VkDeviceMemory.
