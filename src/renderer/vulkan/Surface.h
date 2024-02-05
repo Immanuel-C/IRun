@@ -17,7 +17,7 @@ namespace IRun {
 			/// </summary>
 			/// <param name="window">Window to be rendered to.</param>
 			/// <param name="instance">Vulkan instance this surface is created under.</param>
-			Surface(IWindow::Window& window, const Instance& instance);
+			Surface(IWindow::Window& window, Instance& instance);
 			/// <summary>
 			/// Destroy the surface.
 			/// </summary>

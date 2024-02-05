@@ -5,13 +5,14 @@ namespace IRun {
 		static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 		Renderer::Renderer(IWindow::Window& window, ECS::Helper& helper, bool vSync) :
-			m_window{ window },
-			m_helper{ helper },
+			m_window{ &window },
+			m_helper{ &helper },
 			m_currentFrame{ 0 },
 			m_vSync{ vSync },
 			m_framebufferResized{ false },
-			m_oldFramebufferSize{ window.GetFramebufferSize() }
+			m_oldFramebufferSize{ window.GetFramebufferSize() };
 		{ 
+			
 			if (debugMode) timer.Start();
 			m_instance = Instance{ window };
 			m_surface = Surface{ window, m_instance };
@@ -27,16 +28,16 @@ namespace IRun {
 				m_pipelineCache.CreateCache(m_device, nullptr, 0);
 			}
 
-			m_basePipeline = GraphicsPipeline{ 
-				"shaders/Vert.hlsl", 
-				"shaders/Frag.hlsl", 
-				ShaderLanguage::HLSL, 
-				m_device, m_swapchain, 
-				m_renderPass, 
-				nullptr, 
-				m_pipelineCache 
+			m_basePipeline = GraphicsPipeline{
+				"shaders/Vert.hlsl",
+				"shaders/Frag.hlsl",
+				ShaderLanguage::HLSL,
+				m_device, m_swapchain,
+				m_renderPass,
+				nullptr,
+				m_pipelineCache
 			};
-			
+
 			m_framebuffers = Framebuffers{ m_swapchain, m_renderPass, m_device };
 			m_graphicsCommandPool = CommandPool{ m_device, m_device.GetQueueFamilies().graphicsFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT };
 			m_transferCommandPool = CommandPool{ m_device, m_device.GetQueueFamilies().transferFamily };
@@ -68,6 +69,7 @@ namespace IRun {
 				double time = timer.Stop();
 				I_DEBUG_LOG_INFO("Time to create IRun::Vk::Renderer: %fms", time);
 			}
+
 		}
 
 		void Renderer::AddEntity(ECS::Entity entity) {
@@ -75,7 +77,7 @@ namespace IRun {
 
 			m_entities.insert({ entity, entity });
 
-			auto [vertexData, indexData, shaders] = m_helper.get<ECS::VertexData, ECS::IndexData, ECS::Shader>(entity);
+			auto [vertexData, indexData, shaders] = m_helper->get<ECS::VertexData, ECS::IndexData, ECS::Shader>(entity);
 
 			DeviceLocalBuffer<Vertex> vertexDataBuffer{
 				m_device,
@@ -127,7 +129,7 @@ namespace IRun {
 		void Renderer::RemoveEntity(ECS::Entity entity) {
 			if (debugMode) timer.Start();
 
-			auto [shaders] = m_helper.get<ECS::Shader>(entity);
+			auto [shaders] = m_helper->get<ECS::Shader>(entity);
 
 			DeviceLocalBuffer<Vertex>& vertexDataBuffer = m_vertexDataBuffers.at(entity);
 			vertexDataBuffer.Destroy(m_device);
@@ -158,8 +160,15 @@ namespace IRun {
 			m_renderPassBeginInfo.pClearValues = &clearColor;
 		}
 
+		void Renderer::VSync(bool vSync) {
+			if (m_vSync == vSync) return;
+
+			m_vSync = vSync;
+			RecreateSwapchain();
+		}
+
 		void Renderer::Draw() {
-			IWindow::IVector2 framebufferSize = m_window.GetFramebufferSize();
+			IWindow::Vector2<int32_t> framebufferSize = m_window->GetFramebufferSize();
 
 			if (m_oldFramebufferSize.x != framebufferSize.x || m_oldFramebufferSize.y != framebufferSize.y) {
 				m_framebufferResized = true;
@@ -168,7 +177,7 @@ namespace IRun {
 
 			for (const std::pair<ECS::Entity, ECS::Entity>& en : m_entities) {
 				ECS::Entity entity = en.first;
-				auto [shaders] = m_helper.get<ECS::Shader>(entity);
+				auto [shaders] = m_helper->get<ECS::Shader>(entity);
 
 				std::array<Fence, 1> fencesToWaitFor = {
 					m_drawFences[m_currentFrame].Get()
@@ -335,16 +344,15 @@ namespace IRun {
 			m_instance.Destroy();
 		}
 
+
 		void Renderer::RecreateSwapchain() {
 			m_framebufferResized = false;
-			IWindow::IVector2 size = m_window.GetWindowSize();
+			IWindow::Vector2<int32_t> size = m_window->GetWindowSize();
 
 			while (size.x == 0 || size.y == 0) {
-				// Implement something like glfwWaitEvents() in IWindow.
-				std::this_thread::sleep_for(std::chrono::milliseconds{ 15 });
+				m_window->WaitForEvent();
 
-				m_window.Update();
-				size = m_window.GetWindowSize();
+				size = m_window->GetWindowSize();
 			}
 
 			vkDeviceWaitIdle(m_device.Get().first);
@@ -361,7 +369,7 @@ namespace IRun {
 				fence.Destroy(m_device);
 
 			m_oldSwapchain = m_swapchain;
-			m_swapchain = Swapchain{ m_vSync, m_window, m_surface, m_device, &m_oldSwapchain };
+			m_swapchain = Swapchain{ m_vSync, *m_window, m_surface, m_device, &m_oldSwapchain };
 			m_oldSwapchain.Destroy(m_device, false);
 			m_framebuffers.Destroy(m_device);
 			m_framebuffers = Framebuffers{ m_swapchain, m_renderPass, m_device };

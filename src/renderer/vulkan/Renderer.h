@@ -53,6 +53,9 @@ namespace IRun {
 			/// </summary>
 			/// <param name="color">Must be a valid IRun::Math::Color.</param>
 			void ClearColor(Math::Color color);
+
+			void VSync(bool vSync);
+
 			/// <summary>
 			/// render all entities.
 			/// </summary>
@@ -62,7 +65,8 @@ namespace IRun {
 			/// </summary>
 			void Destroy();
 		private:
-			IWindow::Window& m_window;
+			IWindow::Window* m_window;
+			ECS::Helper* m_helper;
 
 			Instance m_instance;
 			Surface m_surface;
@@ -90,7 +94,6 @@ namespace IRun {
 
 			uint32_t m_currentFrame;
 
-			ECS::Helper& m_helper;
 			std::unordered_map<ECS::Entity, ECS::Entity> m_entities;
 
 			Tools::Timer<Tools::Milliseconds> timer{};
@@ -100,7 +103,7 @@ namespace IRun {
 			void RecreateSwapchain();
 
 			bool m_framebufferResized;
-			IWindow::IVector2 m_oldFramebufferSize;
+			IWindow::Vector2<int32_t> m_oldFramebufferSize;
 
 #ifdef DEBUG
 			bool debugMode = true;
