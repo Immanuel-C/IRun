@@ -32,7 +32,7 @@ namespace IRun {
 			/// <param name="renderPass">A valid IRun::Vk::RenderPass</param>
 			/// <param name="basePipeline">Can be nullptr, the base pipeline that this pipeline is based on.</param>
 			/// <param name="pipelineCache">A valid IRun::Vk::PipelineCache.</param>
-			GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderfilename, ShaderLanguage lang, Device& device, Swapchain& swapchain, RenderPass& renderPass, GraphicsPipeline* basePipeline, PipelineCache& pipelineCache);
+			GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderfilename, ShaderLanguage lang, Device& device, Swapchain& swapchain, RenderPass& renderPass, PipelineCache& pipelineCache, std::optional<GraphicsPipeline> basePipeline = std::nullopt);
 			/// <returns>Get the VkPipeline handle.</returns>
 			inline const VkPipeline Get() const { return m_graphicsPipeline; }
 			/// <summary>

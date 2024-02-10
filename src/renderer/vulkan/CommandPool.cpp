@@ -26,7 +26,10 @@ namespace IRun {
 			VkCommandBufferAllocateInfo allocInfo{};
 			allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 			allocInfo.commandPool = m_commandPool;
-			allocInfo.level = (VkCommandBufferLevel)level;
+
+			VkCommandBufferLevel vkLevel = level == CommandBufferLevel::Primary ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+
+			allocInfo.level = vkLevel;
 			allocInfo.commandBufferCount = 1;
 
 			VkCommandBuffer commandBuffer;
@@ -42,10 +45,13 @@ namespace IRun {
 			return commandBufferIndex;
 		}
 
-		void CommandPool::BeginRecordingCommands(const Device& device, CommandBuffer commandBuffer, VkCommandBufferUsageFlags usageFlags) {
+		void CommandPool::BeginRecordingCommands(const Device& device, CommandBuffer commandBuffer, VkCommandBufferUsageFlags usageFlags, std::optional<VkCommandBufferInheritanceInfo> inheritanceInfo) {
 			VkCommandBufferBeginInfo beginInfo{};
 			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			beginInfo.flags = usageFlags;
+
+			if (inheritanceInfo.has_value())
+				beginInfo.pInheritanceInfo = &inheritanceInfo.value();
 
 			VK_CHECK(vkBeginCommandBuffer(m_commandBuffers.at(commandBuffer), &beginInfo), "Failed to begin Vulkan command buffer");
 		}

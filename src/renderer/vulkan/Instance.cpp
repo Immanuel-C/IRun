@@ -13,6 +13,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
 		I_DEBUG_LOG_ERROR("%s", pCallbackData->pMessage);
 		break;
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+		I_DEBUG_LOG_INFO("%s", pCallbackData->pMessage);
+		break;	
+	case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+		I_DEBUG_LOG_TRACE("%s", pCallbackData->pMessage);
+		break;
 	default:
 		break;
 	}

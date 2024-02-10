@@ -47,7 +47,8 @@ namespace IRun {
 			/// <param name="device">A valid IRun::Vk::Device.</param>
 			/// <param name="commandBuffer">The command buffer to record to.</param>
 			/// <param name="usageFlags">A VkCommandBufferUsageFlags that will be passed into VkCommandBufferBeginInfo::flags.</param>
-			void BeginRecordingCommands(const Device& device, CommandBuffer commandBuffer, VkCommandBufferUsageFlags usageFlags = 0);
+			/// <param name="inheritanceInfo">A VkCommandBufferInheritanceInfo that will be passed into VkCommandBufferBeginInfo::pInheritanceInfo</param>
+			void BeginRecordingCommands(const Device& device, CommandBuffer commandBuffer, VkCommandBufferUsageFlags usageFlags = 0, std::optional<VkCommandBufferInheritanceInfo> inheritanceInfo = std::nullopt);
 			/// <summary>
 			/// End recording commands to a command buffer.
 			/// </summary>
@@ -65,6 +66,8 @@ namespace IRun {
 			/// <param name="commandBuffer">Index of command buffer to retrieve.</param>
 			/// <returns>Handle to VkCommandBuffer.</returns>
 			inline const VkCommandBuffer Get(CommandBuffer commandBuffer) { return m_commandBuffers.at(commandBuffer); }
+
+			inline const VkCommandPool GetHandle() const { return m_commandPool; }
 		private:
 			VkCommandPool m_commandPool;
 			std::unordered_map<CommandBuffer, VkCommandBuffer> m_commandBuffers;

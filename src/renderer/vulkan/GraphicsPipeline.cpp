@@ -4,7 +4,7 @@
 
 namespace IRun {
 	namespace Vk {
-		GraphicsPipeline::GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderFilename, ShaderLanguage lang, Device& device, Swapchain& swapchain, RenderPass& renderPass, GraphicsPipeline* basePipeline, PipelineCache& pipelineCache) {
+		GraphicsPipeline::GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderFilename, ShaderLanguage lang, Device& device, Swapchain& swapchain, RenderPass& renderPass, PipelineCache& pipelineCache, std::optional<GraphicsPipeline> basePipeline) {
 
 			VkShaderModule vertShaderModule{};
 			VkShaderModule fragShaderModule{};
@@ -204,13 +204,9 @@ namespace IRun {
 			// Index defined in VkRenderPassCreateInfo::pSubpasses
 			graphicsPipelineCreateInfo.subpass = 0;
 
-			VkPipeline base = nullptr;
-
-			if (basePipeline != nullptr)
-				base = basePipeline->Get();
-
 			// Base this pipline off another one
-			graphicsPipelineCreateInfo.basePipelineHandle = base;
+			if (basePipeline.has_value())
+				graphicsPipelineCreateInfo.basePipelineHandle = basePipeline.value().Get();
 			// Base this pipeline off of another pipeline in an array of pipeline create infos (not used since we only have one pipline)
 			graphicsPipelineCreateInfo.basePipelineIndex = 0;
 

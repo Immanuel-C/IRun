@@ -18,7 +18,10 @@
 #include "tools/Timer.h"
 
 #include <unordered_map>
-#include <thread>
+#include <mutex>
+#include <future>
+
+
 
 namespace IRun {
 	namespace Vk {
@@ -94,7 +97,7 @@ namespace IRun {
 
 			uint32_t m_currentFrame;
 
-			std::unordered_map<ECS::Entity, ECS::Entity> m_entities;
+			std::vector<ECS::Entity> m_entities;
 
 			Tools::Timer<Tools::Milliseconds> timer{};
 
@@ -104,6 +107,9 @@ namespace IRun {
 
 			bool m_framebufferResized;
 			IWindow::Vector2<int32_t> m_oldFramebufferSize;
+
+			static inline std::mutex m_lock{};
+			std::vector<std::future<CommandBuffer>> m_futures{};
 
 #ifdef DEBUG
 			bool debugMode = true;

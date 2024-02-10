@@ -122,7 +122,7 @@ workspace "IRun"
         }
 
         libdirs { vulkanSdk .. "/Lib" }
-        links {"Vulkan-1"}
+        links {"Vulkan-1", "Shcore"}
 
         defaultBuildLocation()
         defaultBuildCfg()

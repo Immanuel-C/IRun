@@ -130,7 +130,7 @@ namespace IRun {
 			// are the same but if you are using a high DPI display screen coordinates are not the same as pixels. In this case VkSurfaceCapabilitesKHR::currentExtent is set to 
 			// max number of a uint32_t, so we have to calculate the extent manually.
 			if (capabilites.currentExtent.width == std::numeric_limits<uint32_t>::max()) {
-				IWindow::IVector2 framebufferSize = window.GetFramebufferSize();
+				IWindow::Vector2<int32_t> framebufferSize = window.GetFramebufferSize();
 
 				framebufferSize.x = std::clamp((uint32_t)framebufferSize.x, capabilites.minImageExtent.width, capabilites.maxImageExtent.width);
 				framebufferSize.y = std::clamp((uint32_t)framebufferSize.y, capabilites.minImageExtent.height, capabilites.maxImageExtent.height);
