@@ -2,6 +2,7 @@
 
 #include "Device.h"
 #include "Surface.h"
+#include "nvidia/LowLatencyMode.h"
 
 #include <algorithm>
 

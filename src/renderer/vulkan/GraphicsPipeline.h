@@ -8,6 +8,7 @@
 #include "tools\dxc\HLSLCompiler.h"
 #include "../ShaderLang.h"
 #include "../Vertex.h"
+#include "DescriptorPool.h"
 
 #include <string>
 
@@ -32,9 +33,12 @@ namespace IRun {
 			/// <param name="renderPass">A valid IRun::Vk::RenderPass</param>
 			/// <param name="basePipeline">Can be nullptr, the base pipeline that this pipeline is based on.</param>
 			/// <param name="pipelineCache">A valid IRun::Vk::PipelineCache.</param>
-			GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderfilename, ShaderLanguage lang, Device& device, Swapchain& swapchain, RenderPass& renderPass, PipelineCache& pipelineCache, std::optional<GraphicsPipeline> basePipeline = std::nullopt);
+			GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderfilename, ShaderLanguage lang, Device& device, Swapchain& swapchain, RenderPass& renderPass, PipelineCache& pipelineCache, std::optional<int> pushConstants = std::nullopt , std::optional<VkDescriptorSetLayout> descriptorPool = std::nullopt, std::optional<GraphicsPipeline> basePipeline = std::nullopt);
 			/// <returns>Get the VkPipeline handle.</returns>
-			inline const VkPipeline Get() const { return m_graphicsPipeline; }
+			inline const VkPipeline& Get() const { return m_graphicsPipeline; }
+
+			inline const VkPipelineLayout& GetLayout() const { return m_graphicsPipelineLayout; }
+
 			/// <summary>
 			/// Destroy the VkPipeline.
 			/// </summary>

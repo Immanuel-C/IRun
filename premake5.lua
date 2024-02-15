@@ -42,7 +42,8 @@ workspace "IRun"
             "%{prj.location}/../src/",
             vulkanSdk .. "/Include",
             "%{prj.location}/../deps/glm",
-            "%{prj.location}/../deps/CNtity/include"
+            "%{prj.location}/../deps/CNtity/include",
+            "%{prj.location}/../deps/IStl/src",
         }
 
         files {"%{prj.location}/**.cpp", "%{prj.location}/**.h",}
@@ -69,13 +70,14 @@ workspace "IRun"
             "%{prj.location}/../deps/imgui/",
             vulkanSdk .. "/Include",
             "%{prj.location}/../deps/glm",
-            "%{prj.location}/../deps/CNtity/include"
+            "%{prj.location}/../deps/CNtity/include",
+            "%{prj.location}/../deps/IStl/src",
         }
 
         files {"%{prj.location}/**.cpp", "%{prj.location}/**.h",}
         
         libdirs { vulkanSdk .. "/Lib" }
-        links {"OpenGL32", "Vulkan-1", "IWindow", "ILog", "ImGui", "Glad", "Dxcompiler", "glslang", "HLSL", "OSDependent", "OGLCompiler", "SPIRV"}
+        links {"OpenGL32", "Vulkan-1", "IWindow", "ILog", "ImGui", "Glad", "Dxcompiler" }
 
         defines { "_CRT_SECURE_NO_WARNINGS" }
 

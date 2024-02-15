@@ -13,6 +13,7 @@
 #include "SwapchainDetails.h"
 #include "Check.h"
 #include "PNext.h"
+#include "nvidia/LowLatencyMode.h"
 
 namespace IRun {
 	namespace Vk {
@@ -71,8 +72,9 @@ namespace IRun {
 
 			std::unordered_map<QueueType, VkQueue> m_queues;
 
-			std::array<const char*, 1> m_deviceExtensions = {
-				VK_KHR_SWAPCHAIN_EXTENSION_NAME
+			std::array<const char*, 2> m_deviceExtensions = {
+				VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+				VK_NV_LOW_LATENCY_2_EXTENSION_NAME
 			};
 
 			QueueFamilyIndices m_indices;

@@ -40,7 +40,8 @@ namespace IRun {
 			/// <param name="sharingMode">Allow sharing between queue families. Must be a valid VkSharingMode.</param>
 			/// <param name="propertyFlags">Properties of the buffers. Must be a valid VkMemoryPropertyFlags.</param>
 			Buffer(Device& device, DataType* data, size_t dataSize, VkBufferUsageFlags usageFlags, VkSharingMode sharingMode, VkMemoryPropertyFlags propertyFlags, BufferFlags flags = BufferFlags::None) :
-				m_size{ dataSize }
+				m_size{ dataSize },
+				m_hostCoherent{ false }
 			{
 				VkBufferCreateInfo createInfo{};
 				createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -71,9 +72,45 @@ namespace IRun {
 					// VkMemoryMapFlags is reserved should always be zero.
 					vkMapMemory(device.Get().first, m_memory, 0, createInfo.size, 0, &mappedData);
 					memcpy(mappedData, data, (size_t)createInfo.size);
+
+					if (!(propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+						m_hostCoherent = true;
+
+						VkMappedMemoryRange memoryRange{};
+						memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+						memoryRange.offset = 0;
+						memoryRange.size = VK_WHOLE_SIZE;
+						memoryRange.memory = m_memory;
+
+						VK_CHECK(vkFlushMappedMemoryRanges(device.Get().first, 1, &memoryRange), "Failed to flush mapped memory range!");
+						VK_CHECK(vkInvalidateMappedMemoryRanges(device.Get().first, 1, &memoryRange), "Failed to flush mapped memory range!");
+					}
+
+
 					vkUnmapMemory(device.Get().first, m_memory);
 				}
 			}
+
+			inline void SetBufferData(const Device& device, DataType* data) {
+				void* mappedData;
+				// VkMemoryMapFlags is reserved should always be zero.
+				vkMapMemory(device.Get().first, m_memory, 0, (uint32_t)sizeof(DataType) * m_size, 0, &mappedData);
+				memcpy(mappedData, data, (size_t)sizeof(DataType) * m_size);
+
+				if (m_hostCoherent) {
+					VkMappedMemoryRange memoryRange{};
+					memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+					memoryRange.offset = 0;
+					memoryRange.size = VK_WHOLE_SIZE;
+					memoryRange.memory = m_memory;
+
+					VK_CHECK(vkFlushMappedMemoryRanges(device.Get().first, 1, &memoryRange), "Failed to flush mapped memory range!");
+					VK_CHECK(vkInvalidateMappedMemoryRanges(device.Get().first, 1, &memoryRange), "Failed to flush mapped memory range!");
+				}
+
+				vkUnmapMemory(device.Get().first, m_memory);
+			}
+
 			/// <summary>
 			/// Destroy the VkBuffer and free the VkDeviceMemory.
 			/// </summary>
@@ -93,6 +130,8 @@ namespace IRun {
 			VkBuffer m_buffer;
 			VkDeviceMemory m_memory;
 			size_t m_size;
+
+			bool m_hostCoherent;
 
 			inline uint32_t FindMemoryTypeIndex(Device& device, uint32_t allowedTypes, VkMemoryPropertyFlags propertyFlags) {
 				// Props of the physical device memory

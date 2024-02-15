@@ -61,7 +61,8 @@ namespace IRun {
 
 		void CommandPool::DestroyCommandBuffer(Device& device, CommandBuffer commandBuffer) {
 			vkFreeCommandBuffers(device.Get().first, m_commandPool, 1, &m_commandBuffers.at(commandBuffer));
-			m_commandBuffers.erase(commandBuffer);
+			// Breaks everything
+			// m_commandBuffers.erase(commandBuffer);
 		}
 	}
 }

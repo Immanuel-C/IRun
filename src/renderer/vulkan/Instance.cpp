@@ -73,6 +73,7 @@ namespace IRun {
 			createInfo.pApplicationInfo = &appInfo;
 
 			std::vector<const char*> requiredInstanceExtensions{};
+			requiredInstanceExtensions.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
 			IWindow::Vk::GetRequiredInstanceExtensions(requiredInstanceExtensions);
 			if (m_enableValidationLayers)
 				requiredInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

@@ -1,5 +1,7 @@
 #include "Swapchain.h"
 
+#include "tools/Flags.h"
+
 namespace IRun {
 	namespace Vk {
 		Swapchain::Swapchain(bool vSync, IWindow::Window& window, const Surface& surface, const Device& device, Swapchain* oldSwapchain) {
@@ -55,6 +57,15 @@ namespace IRun {
 
 			swapchainCreateInfo.oldSwapchain = old;
 
+			if (Nv::CheckIfVendorNv(device.GetDeviceProperties())) {
+				VkSwapchainLatencyCreateInfoNV latencyCreateInfo{};
+				latencyCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_LATENCY_CREATE_INFO_NV;
+				latencyCreateInfo.pNext = nullptr;
+				latencyCreateInfo.latencyModeEnable = VK_FALSE;
+
+				swapchainCreateInfo.pNext = &latencyCreateInfo;
+			}
+
 			VK_CHECK(vkCreateSwapchainKHR(device.Get().first, &swapchainCreateInfo, nullptr, &m_swapchain), "Failed to create Vulkan swapchain! Abort!");
 
 			I_DEBUG_LOG_TRACE("Created Vulkan swapchain: 0x%p", m_swapchain);
@@ -95,25 +106,58 @@ namespace IRun {
 				return { VK_FORMAT_R8G8B8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
 
 			for (const VkSurfaceFormatKHR& format : formats) {
-				if ((format.format == VK_FORMAT_R8G8B8_UNORM || format.format == VK_FORMAT_B8G8R8_UNORM) && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+				if ((format.format == VK_FORMAT_R8G8B8_SRGB || format.format == VK_FORMAT_B8G8R8_SRGB) && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 					return format;
 			}
 
 			// yolo
 			return formats[0];
 		}
+
+		enum struct PresentModes {
+			None = 0x0,
+			Immediate = 0x1,
+			Mailbox = 0x2,
+			FirstInFirstOut = 0x4,
+			FirstInFirstOutRelaxed = 0x8,
+			Max,
+		};
+		CREATE_FLAGS_FROM_ENUM_STRUCT(PresentModes, PresentModes::Max)
+
 		VkPresentModeKHR Swapchain::ChooseBestPresentationMode(bool vSync, const Device& device) {
 			std::vector<VkPresentModeKHR> presentModes = device.GetSwapchainDetails().presentModes;
 
-			for (const VkPresentModeKHR& presentMode : presentModes)
-			{
-				if (vSync && presentMode == VK_PRESENT_MODE_FIFO_KHR)
-					return VK_PRESENT_MODE_FIFO_KHR;
-				else if (!vSync && presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
-					return presentMode;
+			PresentModes supportedPresentModes = PresentModes::None;
+
+			for (const VkPresentModeKHR& presentMode : presentModes) {
+				switch (presentMode)
+				{
+				case VK_PRESENT_MODE_FIFO_KHR:
+					supportedPresentModes = (supportedPresentModes | PresentModes::FirstInFirstOut);
+					break;
+				case VK_PRESENT_MODE_MAILBOX_KHR:
+					supportedPresentModes = (supportedPresentModes | PresentModes::Mailbox);
+					break;
+				case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+					supportedPresentModes = (supportedPresentModes | PresentModes::FirstInFirstOutRelaxed);
+					break;
+				case VK_PRESENT_MODE_IMMEDIATE_KHR:
+					supportedPresentModes = (supportedPresentModes | PresentModes::Immediate);
+					break;
+				default:
+					break;
+				}
 			}
 
-			I_LOG_WARNING("VK_PRESENT_MODE_MAILBOX_KHR or VK_PRESENT_MODE_IMMEDIATE_KHR is not supported fallback to VK_PRESENT_MODE_FIFO_KHR! Try using another Graphics API if you don't want to use vSync");
+			if (!vSync && (uint64_t)(supportedPresentModes & PresentModes::Immediate))
+				return VK_PRESENT_MODE_IMMEDIATE_KHR;
+
+			if (vSync && (uint64_t)(supportedPresentModes & PresentModes::FirstInFirstOut))
+				return VK_PRESENT_MODE_FIFO_KHR;
+			else if (vSync && (uint64_t)(supportedPresentModes & PresentModes::Mailbox))
+				return VK_PRESENT_MODE_MAILBOX_KHR;
+			else if (vSync && (uint64_t)(supportedPresentModes & PresentModes::FirstInFirstOutRelaxed))
+				return VK_PRESENT_MODE_FIFO_RELAXED_KHR;
 
 			// Required by Vulkan spec
 			return VK_PRESENT_MODE_FIFO_KHR;

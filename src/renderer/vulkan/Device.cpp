@@ -180,6 +180,12 @@ namespace IRun {
 			VkPhysicalDeviceFeatures deviceFeatures{};
 			deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
+			VkPhysicalDeviceVulkan12Features vk12DeviceFeatures{};
+			vk12DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+			vk12DeviceFeatures.pNext = nullptr;
+			vk12DeviceFeatures.timelineSemaphore = VK_TRUE;
+			deviceCreateInfo.pNext = &vk12DeviceFeatures;
+
 			VK_CHECK(vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device), "Failed to create Vulkan Logical Device!");
 			I_DEBUG_LOG_TRACE("Created Vulkan device: 0x%p", m_device);
 
@@ -208,7 +214,6 @@ namespace IRun {
 			}
 
 		}
-
 
 		struct QueueFamilyCount {
 			int index;
@@ -281,14 +286,11 @@ namespace IRun {
 
 		bool Device::CheckDeviceSuitable(VkPhysicalDevice device, const Surface& surface) {
 
-			/*
-			VkPhysicalDeviceProperties2 deviceProps{};
-			vkGetPhysicalDeviceProperties2(device, &deviceProps);
+			VkPhysicalDeviceProperties deviceProps{};
+			vkGetPhysicalDeviceProperties(device, &deviceProps);
 
-			VkPhysicalDeviceFeatures2 deviceFeatures{};
-			vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
-			*/
-
+			VkPhysicalDeviceFeatures deviceFeatures{};
+			vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
 			QueueFamilyIndices indices = FindQueueFamilies(device, surface);
 			SwapchainDetails details = FindSwapchainDetails(device, surface);
@@ -327,7 +329,55 @@ namespace IRun {
 		SwapchainDetails Device::FindSwapchainDetails(VkPhysicalDevice device, const Surface& surface) {
 			SwapchainDetails swapchainDetails{};
 
-			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface.Get(), &swapchainDetails.capabilities);
+			VkPhysicalDeviceProperties deviceProps{};
+			vkGetPhysicalDeviceProperties(device, &deviceProps);
+
+			if (Nv::CheckIfVendorNv(deviceProps)) {
+				uint32_t presentModeCount = 0;
+				vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.Get(), &presentModeCount, nullptr);
+
+				if (presentModeCount) {
+					swapchainDetails.presentModes.resize(presentModeCount);
+					vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.Get(), &presentModeCount, swapchainDetails.presentModes.data());
+				}
+
+
+				VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo{};
+				surfaceInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR;
+				surfaceInfo.surface = surface.Get();
+
+				VkLatencySurfaceCapabilitiesNV latencySurfaceCapabilities{};
+				latencySurfaceCapabilities.sType = VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV;
+				latencySurfaceCapabilities.pNext = nullptr;
+				latencySurfaceCapabilities.presentModeCount = (uint32_t)swapchainDetails.presentModes.size();
+				latencySurfaceCapabilities.pPresentModes = swapchainDetails.presentModes.data();
+
+				VkSurfaceCapabilities2KHR surfaceCapabilites{};
+				surfaceCapabilites.sType = VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR;
+				surfaceCapabilites.pNext = &latencySurfaceCapabilities;
+
+				vkGetPhysicalDeviceSurfaceCapabilities2KHR(device, &surfaceInfo, &surfaceCapabilites);
+
+
+				for (uint32_t i = 0; i < latencySurfaceCapabilities.presentModeCount; i++)
+					swapchainDetails.presentModes[i] = latencySurfaceCapabilities.pPresentModes[i];
+				swapchainDetails.presentModes.resize(latencySurfaceCapabilities.presentModeCount);
+				swapchainDetails.presentModes.shrink_to_fit();
+
+				swapchainDetails.capabilities = surfaceCapabilites.surfaceCapabilities;
+			}
+			else {
+				uint32_t presentModeCount = 0;
+				vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.Get(), &presentModeCount, nullptr);
+
+				if (presentModeCount) {
+					swapchainDetails.presentModes.resize(presentModeCount);
+					vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.Get(), &presentModeCount, swapchainDetails.presentModes.data());
+				}
+
+				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface.Get(), &swapchainDetails.capabilities);
+			}
+			
 
 			uint32_t formatCount = 0;
 			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface.Get(), &formatCount, nullptr);
@@ -337,13 +387,6 @@ namespace IRun {
 				vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface.Get(), &formatCount, swapchainDetails.formats.data());
 			}
 
-			uint32_t presentModeCount = 0;
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.Get(), &presentModeCount, nullptr);
-
-			if (presentModeCount) {
-				swapchainDetails.presentModes.resize(presentModeCount);
-				vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.Get(), &presentModeCount, swapchainDetails.presentModes.data());
-			}
 
 			return swapchainDetails;
 		}

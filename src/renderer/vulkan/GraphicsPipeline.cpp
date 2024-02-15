@@ -4,7 +4,7 @@
 
 namespace IRun {
 	namespace Vk {
-		GraphicsPipeline::GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderFilename, ShaderLanguage lang, Device& device, Swapchain& swapchain, RenderPass& renderPass, PipelineCache& pipelineCache, std::optional<GraphicsPipeline> basePipeline) {
+		GraphicsPipeline::GraphicsPipeline(const std::string& vertShaderFilename, const std::string& fragShaderFilename, ShaderLanguage lang, Device& device, Swapchain& swapchain, RenderPass& renderPass, PipelineCache& pipelineCache, std::optional<int> pushConstants, std::optional<VkDescriptorSetLayout> descriptorSetLayout, std::optional<GraphicsPipeline> basePipeline) {
 
 			VkShaderModule vertShaderModule{};
 			VkShaderModule fragShaderModule{};
@@ -138,7 +138,7 @@ namespace IRun {
 			// Requires device feature
 			rasterizerStateCreateInfo.lineWidth = 1.0f;
 			rasterizerStateCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-			rasterizerStateCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+			rasterizerStateCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 			// Whether to add depth bias to fragments for shadow acne. Requires device feature
 			rasterizerStateCreateInfo.depthBiasEnable = VK_FALSE;
 
@@ -174,8 +174,16 @@ namespace IRun {
 			// TODO: Pipline layout
 			VkPipelineLayoutCreateInfo piplineLayoutCreateInfo{};
 			piplineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-			piplineLayoutCreateInfo.setLayoutCount = 0;
-			piplineLayoutCreateInfo.pSetLayouts = nullptr;
+
+			if (descriptorSetLayout.has_value()) {
+				piplineLayoutCreateInfo.setLayoutCount = 1;
+				piplineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout.value();
+			}
+			else {
+				piplineLayoutCreateInfo.setLayoutCount = 0;
+				piplineLayoutCreateInfo.pSetLayouts = nullptr;
+			}
+
 			piplineLayoutCreateInfo.pushConstantRangeCount = 0;
 			piplineLayoutCreateInfo.pPushConstantRanges = nullptr;
 
@@ -241,6 +249,5 @@ namespace IRun {
 
 			return shaderModule;	
 		}
-
 	}
-}
+};

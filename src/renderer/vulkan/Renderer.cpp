@@ -4,13 +4,15 @@ namespace IRun {
 	namespace Vk {
 		static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
-		Renderer::Renderer(IWindow::Window& window, ECS::Helper& helper, bool vSync) :
+		Renderer::Renderer(IWindow::Window& window, ICamera& camera, ECS::Helper& helper, bool vSync) :
 			m_window{ &window },
 			m_helper{ &helper },
+			m_camera{ &camera },
 			m_currentFrame{ 0 },
 			m_vSync{ vSync },
 			m_framebufferResized{ false },
-			m_oldFramebufferSize{ window.GetFramebufferSize() }
+			m_oldFramebufferSize{ window.GetFramebufferSize() },
+			m_clearColor{ 0.0f, 0.0f, 0.0f }
 		{ 
 			m_instance = Instance{ window };
 			m_surface = Surface{ window, m_instance };
@@ -26,6 +28,37 @@ namespace IRun {
 				m_pipelineCache.CreateCache(m_device, nullptr, 0);
 			}
 
+			m_uniformBuffers.resize(m_swapchain.GetSwapchainImages().size());
+			m_descriptorSets.resize(m_swapchain.GetSwapchainImages().size());
+
+			VkDescriptorPoolSize poolSize{};
+			poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			poolSize.descriptorCount = (uint32_t)1;
+
+			m_descriptorPool = DescriptorPool{ m_device, 3, 1, &poolSize };
+
+			VkDescriptorSetLayoutBinding mvpLayoutBinding{};
+			mvpLayoutBinding.binding = 0;
+			mvpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			mvpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+			mvpLayoutBinding.descriptorCount = (uint32_t)1;
+
+			m_mvp.model = glm::mat4{ 1.0f };
+			//m_mvp.proj = glm::ortho(100.0f, 100.0f, 100.0f, 100.0f, 0.0f, 100.0f);
+			m_mvp.proj = m_camera->GetProjection();
+			m_mvp.view = m_camera->GetView();
+
+			m_mvp.model = glm::scale(m_mvp.model, { 2.0f, 2.0f, 2.0f });
+
+			m_graphicsCommandPool = CommandPool{ m_device, m_device.GetQueueFamilies().graphicsFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT };
+			m_transferCommandPool = CommandPool{ m_device, m_device.GetQueueFamilies().transferFamily };
+
+			for (size_t i = 0; i < m_uniformBuffers.size(); i++) {
+				m_descriptorSets[i] = m_descriptorPool.CreateDescriptorSet(m_device, 1, &mvpLayoutBinding);
+				m_uniformBuffers[i] = Buffer<Mvp>{ m_device, &m_mvp, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT };
+				m_descriptorPool.WriteBufferToDescriptor(m_device, m_descriptorSets[i], 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_uniformBuffers[i].Get(), 0, sizeof(Mvp));
+			}
+
 			m_basePipeline = GraphicsPipeline{ 
 				"shaders/Vert.hlsl", 
 				"shaders/Frag.hlsl", 
@@ -33,12 +66,11 @@ namespace IRun {
 				m_device, m_swapchain, 
 				m_renderPass, 
 				m_pipelineCache,
-				std::nullopt
+				std::nullopt,
+				std::make_optional(m_descriptorPool.GetDescriptorSetLayout(m_descriptorSets[0]))
 			};
 			
 			m_framebuffers = Framebuffers{ m_swapchain, m_renderPass, m_device };
-			m_graphicsCommandPool = CommandPool{ m_device, m_device.GetQueueFamilies().graphicsFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT };
-			m_transferCommandPool = CommandPool{ m_device, m_device.GetQueueFamilies().transferFamily };
 
 			for (int i = 0; i < m_framebuffers.Get().size(); i++)
 				m_commandBuffers.emplace_back(m_graphicsCommandPool.CreateBuffer(m_device, IRun::Vk::CommandBufferLevel::Primary));
@@ -57,11 +89,20 @@ namespace IRun {
 
 			m_renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 
-
 			VkClearValue clearColor{};
 			clearColor.color = { { 0.0f, 0.0f, 0.0f } };
 			m_renderPassBeginInfo.clearValueCount = 1;
 			m_renderPassBeginInfo.pClearValues = &clearColor;
+
+			Nv::SetLowLatencyMode(m_device.Get().first, m_device.GetDeviceProperties(), m_swapchain.Get(), Nv::LowLatencyMode::OnBoost);
+
+			VkSemaphoreTypeCreateInfo timelineInfo{};
+			timelineInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+			timelineInfo.pNext = nullptr;
+			timelineInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+			timelineInfo.initialValue = 1;
+
+			m_nvLatencySleepSemaphore = Sync<Semaphore>{ m_device, 0, &timelineInfo };
 		}
 
 		void Renderer::AddEntity(ECS::Entity entity) {
@@ -103,6 +144,8 @@ namespace IRun {
 					m_swapchain,
 					m_renderPass,
 					m_pipelineCache,
+					std::nullopt,
+					std::make_optional(m_descriptorPool.GetDescriptorSetLayout(m_descriptorSets[0])),
 					std::make_optional(m_basePipeline)
 				};
 
@@ -132,10 +175,7 @@ namespace IRun {
 		}
 
 		void Renderer::ClearColor(Math::Color color) {
-			VkClearValue clearColor{};
-			clearColor.color = { { ((float)color.r / 255.0f), (float)(color.g / 255.0f), (float)(color.b / 255.0f), 1.0f } };
-			m_renderPassBeginInfo.clearValueCount = 1;
-			m_renderPassBeginInfo.pClearValues = &clearColor;
+			m_clearColor = color;
 		}
 
 		void Renderer::Draw() {
@@ -166,12 +206,42 @@ namespace IRun {
 					
 			vkResetFences(m_device.Get().first, (uint32_t)fencesToWaitFor.size(), fencesToWaitFor.data());
 
+			m_mvp.proj = m_camera->GetProjection();
+			m_mvp.view = m_camera->GetView();
+			m_uniformBuffers[imageIndex].SetBufferData(m_device, &m_mvp);
+			m_descriptorPool.WriteBufferToDescriptor(m_device, m_descriptorSets[imageIndex], 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_uniformBuffers[imageIndex].Get(), 0, sizeof(Mvp));
+
+			VkClearValue clearColor{};
+			clearColor.color = { { ((float)m_clearColor.r / 255.0f), (float)(m_clearColor.g / 255.0f), (float)(m_clearColor.b / 255.0f), 1.0f } };
+			m_renderPassBeginInfo.clearValueCount = 1;
+			m_renderPassBeginInfo.pClearValues = &clearColor;
 			m_renderPassBeginInfo.renderPass = m_renderPass.Get();
 			m_renderPassBeginInfo.renderArea.offset = { 0, 0 };
 			m_renderPassBeginInfo.renderArea.extent = m_swapchain.GetChosenSwapchainDetails().first;
 			m_renderPassBeginInfo.framebuffer = m_framebuffers[imageIndex];
 
 			VkCommandBuffer vkCommandBuffer = m_graphicsCommandPool[m_commandBuffers[imageIndex]];
+
+			if (!m_window->IsKeyDown(IWindow::Key::N)) {
+				Nv::LatencySleep(m_device.Get().first, m_device.GetDeviceProperties(), m_swapchain.Get(), m_nvLatencySleepSemaphore.Get());
+
+				VkSemaphoreWaitInfo nvLatencySleepSemaphoreWaitInfo{};
+				nvLatencySleepSemaphoreWaitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+
+				std::array<VkSemaphore, 1> nvLatencySleepSleepSemaphores = {
+					m_nvLatencySleepSemaphore.Get()
+				};
+
+				std::array<uint64_t, 1> nvLatencySleepSleepSemaphoreValues = {
+					0
+				};
+
+				nvLatencySleepSemaphoreWaitInfo.semaphoreCount = (uint32_t)nvLatencySleepSleepSemaphores.size();
+				nvLatencySleepSemaphoreWaitInfo.pSemaphores = nvLatencySleepSleepSemaphores.data();
+				nvLatencySleepSemaphoreWaitInfo.pValues = nvLatencySleepSleepSemaphoreValues.data();
+
+				vkWaitSemaphores(m_device.Get().first, &nvLatencySleepSemaphoreWaitInfo, UINT64_MAX);
+			}
 
 			m_graphicsCommandPool.BeginRecordingCommands(m_device, m_commandBuffers[imageIndex]);
 
@@ -213,6 +283,12 @@ namespace IRun {
 
 				vkCmdBindIndexBuffer(vkCommandBuffer, indexDataBuffer.Get().Get(), 0, VK_INDEX_TYPE_UINT32);
 
+				std::array<VkDescriptorSet, 1> descriptorSets = {
+					m_descriptorPool.GetDescriptorSet(m_descriptorSets[imageIndex])
+				};
+
+				vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelines.at(shaders).GetLayout(), 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+
 				vkCmdDrawIndexed(vkCommandBuffer, (uint32_t)indexDataBuffer.Get().GetSize(), 1, 0, 0, 0);
 			}
 
@@ -246,6 +322,15 @@ namespace IRun {
 			submitInfo.signalSemaphoreCount = (uint32_t)submitSignalSemaphores.size();
 			submitInfo.pSignalSemaphores = submitSignalSemaphores.data();
 
+			if (Nv::CheckIfVendorNv(m_device.GetDeviceProperties())) {
+				VkLatencySubmissionPresentIdNV latencySubmissionPresentID{};
+				latencySubmissionPresentID.sType = VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV;
+				latencySubmissionPresentID.pNext = nullptr;
+				latencySubmissionPresentID.presentID = imageIndex;
+
+				submitInfo.pNext = &latencySubmissionPresentID;
+			}
+
 			VK_CHECK(vkQueueSubmit(m_device.GetQueues().at(IRun::Vk::QueueType::Graphics), 1, &submitInfo, fencesToWaitFor[0]), "Failed to sumbit semaphore and command buffer info to graphics queue!");
 
 
@@ -271,6 +356,7 @@ namespace IRun {
 				VK_CHECK(res, "Failed to present Vulkan swapchain image!");
 
 			m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
 		}
 
 		void Renderer::Destroy()
@@ -278,6 +364,11 @@ namespace IRun {
 			m_pipelineCache.SaveCache("shaders/cache/PipelineCache.bin", m_device);
 
 			vkQueueWaitIdle(m_device.GetQueues().at(QueueType::Graphics));
+
+			for (Buffer<Mvp>& buffer : m_uniformBuffers) 
+				buffer.Destroy(m_device);
+
+			m_descriptorPool.Destroy(m_device);
 
 			for (auto& [entity, vertexBuffer] : m_vertexDataBuffers)
 				vertexBuffer.Destroy(m_device);
@@ -312,7 +403,7 @@ namespace IRun {
 
 		void Renderer::RecreateSwapchain() {
 			m_framebufferResized = false;
-			IWindow::Vector2<int32_t> size = m_window->GetWindowSize();
+			IWindow::Vector2<int32_t> size = m_window->GetFramebufferSize();
 
 			while (size.x == 0 || size.y == 0) {
 				m_window->WaitForEvent();

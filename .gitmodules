@@ -13,3 +13,6 @@
 [submodule "deps/CNtity"]
 	path = deps/CNtity
 	url = https://github.com/swordfatih/CNtity.git
+[submodule "deps/IStl"]
+	path = deps/IStl
+	url = https://github.com/Immanuel-C/IStl.git

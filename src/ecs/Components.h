@@ -116,7 +116,12 @@ namespace IRun {
 			};
 		};
 
-
+		struct Transform {
+			glm::vec3 position;
+			glm::vec3 scale;
+			/// degrees
+			glm::vec3 rotation; 
+		};
 
 		template<typename ...Components >
 		SerializedEntity Serialize(Helper& helper, const Entity& entity) {

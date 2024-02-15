@@ -12,6 +12,9 @@
 #include "CommandPool.h"
 #include "Sync.h"
 #include "DeviceLocalBuffer.h"
+#include "DescriptorPool.h"
+#include "nvidia/LowLatencyMode.h"
+#include "renderer/camera/ICamera.h"
 
 #include "ecs/Components.h"
 
@@ -37,7 +40,7 @@ namespace IRun {
 			/// <param name="window">A valid IWindow::Window.</param>
 			/// <param name="helper">A valid IRun::ECS::Helper.</param>
 			/// <param name="vSync">If set to true the framerate of the application will be locked to the monitors refresh rate. Fixes screen tearing but may cause input lag.</param>
-			Renderer(IWindow::Window& window, ECS::Helper& helper, bool vSync);
+			Renderer(IWindow::Window& window, ICamera& camera, ECS::Helper& helper, bool vSync);
 			/// <summary>
 			/// Add an entity that is to be rendered.
 			/// </summary>
@@ -67,9 +70,11 @@ namespace IRun {
 			/// Destroy the renderer. You must destroy the window and IRun::ECS::Helper after destroying the renderer.
 			/// </summary>
 			void Destroy();
+
 		private:
 			IWindow::Window* m_window;
 			ECS::Helper* m_helper;
+			ICamera* m_camera;
 
 			Instance m_instance;
 			Surface m_surface;
@@ -87,11 +92,21 @@ namespace IRun {
 			std::vector<Sync<Semaphore>> m_renderFinishedSemaphores{};
 			std::vector<Sync<Fence>> m_drawFences{};
 
+			Sync<Semaphore> m_nvLatencySleepSemaphore;
+
 			std::vector<CommandBuffer> m_commandBuffers;
 
 			std::unordered_map<ECS::Shader, GraphicsPipeline, ECS::Shader::HashFn> m_graphicsPipelines;
 			std::unordered_map<ECS::Entity, DeviceLocalBuffer<Vertex>> m_vertexDataBuffers;
 			std::unordered_map<ECS::Entity, DeviceLocalBuffer<uint32_t>> m_indexDataBuffers;
+
+			std::vector<Buffer<Mvp>> m_uniformBuffers;
+			std::vector<DescriptorSet> m_descriptorSets;
+			DescriptorPool m_descriptorPool;
+			
+			Math::Color m_clearColor;
+
+			Mvp m_mvp;
 
 			VkRenderPassBeginInfo m_renderPassBeginInfo{};
 
@@ -107,9 +122,6 @@ namespace IRun {
 
 			bool m_framebufferResized;
 			IWindow::Vector2<int32_t> m_oldFramebufferSize;
-
-			static inline std::mutex m_lock{};
-			std::vector<std::future<CommandBuffer>> m_futures{};
 
 #ifdef DEBUG
 			bool debugMode = true;

@@ -1,14 +1,8 @@
-#ifdef KHR
-#define LOCATION(x) [[vk::location(x)]]
-#else 
-#define LOCATION(x)
-#endif
-
 struct VSInput
 {
-    LOCATION(0)
+    [[vk::location(0)]]
     float3 position : POSITION0;
-    LOCATION(1) 
+    [[vk::location(1)]] 
     float2 uv : TEXCOORD0;
 };
 

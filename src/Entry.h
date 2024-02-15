@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
 		currentTime = app->window.GetTime();
 		double dt = currentTime - lastTime;
 
+
 		// Does nothing until imgui support is added to the Vulkan renderer
 		// app->OnUIRender(dt);
 
@@ -31,7 +32,7 @@ int main(int argc, char** argv) {
 
 		app->OnUpdate(dt);
 
-		app->OnUpdate((currentTime - lastTime));
+		app->OnUpdate(dt);
 		app->window.Update();
 		lastTime = currentTime;
 	}
